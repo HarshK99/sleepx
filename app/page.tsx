@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/Card'
 import { SleepChart } from '@/components/sleep/SleepChart'
 import { SleepEntryForm } from '@/components/sleep/SleepEntryForm'
+import { SleepEntrySheet } from '@/components/sleep/SleepEntrySheet'
 import { daysBefore, formatForTimeInput, roundToNearestStep } from '@/lib/sleep/duration'
 import { getDailyTotals } from '@/lib/sleep/queries'
 
@@ -32,7 +33,9 @@ export default async function DashboardPage() {
         </h2>
         <SleepChart dailyTotals={dailyTotals} />
       </Card>
-      <SleepEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />
+      <SleepEntrySheet>
+        <SleepEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />
+      </SleepEntrySheet>
     </main>
   )
 }

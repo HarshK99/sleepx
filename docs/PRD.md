@@ -10,14 +10,17 @@ Just the app owner. Single-user, no accounts, no auth. The data model should not
 
 ## 3. Core user flow
 
-1. Open the app (on a phone, most of the time). Land on the dashboard: the trend chart is at the top, the quick-entry form directly below it.
-2. The quick-entry form is **already on screen, unconditionally** — **bed time**, **wake time**, and an **optional note**, pre-filled with sensible defaults (bed time = yesterday 11:00 PM, wake time = now), editable via scroll-wheel pickers (see §6). There is no "Add entry" button to tap first; nothing is hidden behind a sheet, modal, or FAB that must be opened, and no scrolling past other content is required to reach it on a normal phone screen — it just isn't the literal first pixel anymore now that the chart leads.
-3. Tap **Save**. One submit, no confirmation step.
+1. Open the app (on a phone, most of the time). Land on the dashboard: the trend chart is at the top.
+2. The quick-entry form is **open by default, as a bottom sheet, with zero clicks** — **bed time**, **wake time**, and an **optional note**, pre-filled with sensible defaults (bed time = yesterday 11:00 PM, wake time = now), editable via scroll-wheel pickers (see §6). The first time you land in a new session, nothing needs to be tapped to reach it.
+3. Tap **Save**. One submit, no confirmation step. The sheet stays open afterward (so a second entry, e.g. a nap, doesn't need reopening it).
 4. Dashboard updates in place: the new entry is reflected in the chart immediately.
-5. The form is always available for a new entry — there is no "one entry per day" restriction. An evening nap is logged the same way as a night's sleep: bed time and wake time for that nap. Both entries count toward the same day's total (see §5).
-6. Optionally, visit **History** to see every past entry and edit or delete one.
+5. The sheet can be dismissed (× or tapping the backdrop) to see the full chart unobstructed, and reopened any time via a **+** button. That closed/open choice is remembered only for the current session (`sessionStorage`) — the **next new session opens it again automatically**, so the zero-click default always comes back.
+6. The form is always available for a new entry (once the sheet's open) — there is no "one entry per day" restriction. An evening nap is logged the same way as a night's sleep: bed time and wake time for that nap. Both entries count toward the same day's total (see §5).
+7. Optionally, visit **History** to see every past entry and edit or delete one.
 
 Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks from History.
+
+**On the bottom-sheet decision:** this replaces an earlier stricter rule ("never gate the form behind a FAB/modal/bottom sheet") with a narrower one — zero clicks *the first time each session*, at the cost of one click (the + FAB) to log a second entry after closing it. That's a deliberate, explicit trade the project owner chose over the stricter always-inline version; it is not an oversight and shouldn't be "fixed" back without checking here first.
 
 ## 4. MVP scope
 
@@ -49,7 +52,7 @@ Design rules:
 
 ## 6. Non-functional requirements
 
-- **Minimal clicks** is the product's core differentiator — every future feature proposal should be evaluated against "does this add a click to the core flow?" Concretely: **opening the app must not require a click to reveal the entry form.** No "Add entry" button, no FAB-triggered modal, no bottom sheet that starts collapsed. The form is rendered directly on the dashboard, visible immediately.
+- **Minimal clicks** is the product's core differentiator — every future feature proposal should be evaluated against "does this add a click to the core flow?" Concretely: **the first time each session, opening the app must not require a click to reveal the entry form** — it's a bottom sheet that starts open, not collapsed. Once explicitly dismissed within a session, reopening it via the + FAB is an accepted, deliberate exception to "zero clicks" (see §3) — don't extend that exception anywhere else without the same explicit sign-off.
 - **Mobile-first, not just mobile-friendly.** This is designed for a phone, held by someone who just woke up (or is about to sleep), not a desktop dashboard that happens to be responsive:
   - Design and build for a ~375–430px viewport first; widen up to tablet/desktop afterward, not the other way around.
   - Single-column layout — no side-by-side panels that only make sense on wide screens.

@@ -21,12 +21,13 @@ This is the modular/no-repetition mandate from the project owner. Concretely:
 - **UI primitives** (button, card, labeled input, etc.) live in `components/ui/` and are reused, not re-implemented per feature component. Only extract a primitive once a second real usage appears — don't pre-build a component library speculatively.
 - **Time entry granularity is 15 minutes** (:00/:15/:30/:45), enforced once: `components/ui/WheelDateTimePicker.tsx`'s Minute column is generated from `lib/sleep/duration.ts`'s `MINUTE_STEP` constant — nothing else hardcodes `15` or a minute list.
 - **Types** for the domain (`SleepEntry`, `NewSleepEntry`) are inferred from the Drizzle schema (`typeof sleepEntries.$inferSelect`) in `lib/sleep/types.ts` and imported everywhere — never redeclared.
+- **A Client Component that just adds interactive chrome around a Server Component gets it as `children`, never as a direct import.** `SleepEntrySheet` (client) never imports `SleepEntryForm` (server) itself — `app/page.tsx` (server) builds `<SleepEntryForm .../>` and passes it into `<SleepEntrySheet>{...}</SleepEntrySheet>`. Importing a Server Component file from inside a `'use client'` file would pull it into the client bundle; passing it as `children` from a Server Component parent keeps it server-rendered.
 
 ## Directory map
 
 ```
 app/
-  page.tsx                 # Dashboard: chart, then quick-entry form below it, fetches getDailyTotals() server-side
+  page.tsx                 # Dashboard: chart, then the entry form wrapped in SleepEntrySheet, fetches getDailyTotals() server-side
   history/
     page.tsx               # Full entry list, edit/delete
   actions/
@@ -42,10 +43,12 @@ lib/
     queries.ts                 # getRecentEntries(), getAllEntries(), getEntryById(), getDailyTotals(), insertEntry(), updateEntry(), deleteEntry()
 
 components/
-  ui/                        # Generic, reusable, no domain knowledge (Button, Card, Field, ...)
+  ui/                        # Generic, reusable, no domain knowledge (Button, Card, Field, IconButton, ...)
     WheelDateTimePicker.tsx   # Date/Hour/Minute scroll-wheel picker ('use client', wraps react-mobile-picker), writes a hidden input matching the same "YYYY-MM-DDTHH:mm" shape lib/sleep/duration.ts already parses — the Server Action contract didn't change
+    IconButton.tsx             # Bare circular icon-button primitive (no default size/color — callers always set their own, see the file's own comment) — used by the sheet's close × and its + FAB
   sleep/
-    SleepEntryForm.tsx        # Quick-entry form (Server Component, <form action={createEntryAction}> calls the Server Action directly) — rendered directly in app/page.tsx, always visible, never gated behind an "Add" click/modal/sheet
+    SleepEntryForm.tsx        # Quick-entry form (Server Component, <form action={createEntryAction}> calls the Server Action directly) — no chrome of its own; whatever renders it (SleepEntrySheet) supplies the surface/border
+    SleepEntrySheet.tsx        # 'use client' bottom sheet wrapping SleepEntryForm (passed in as `children` from the Server Component page, so the form itself stays server-rendered) — open/closed state via useSyncExternalStore + sessionStorage, see the file's own comment for why not useState+useEffect
     SleepChart.tsx             # Hours-slept-per-day line/area chart ('use client', Recharts), fed by getDailyTotals() — no aggregation of its own
     SleepHistoryList.tsx        # Editable/deletable list of entries
 

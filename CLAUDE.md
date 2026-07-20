@@ -12,7 +12,7 @@ Before doing any non-trivial work, read:
 ## Non-negotiables
 
 - **Minimal clicks**: the core "log a night's sleep" flow is the product. Don't add fields, steps, or confirmations to it without checking against the PRD.
-- **The entry form is always on screen, by default.** Never gate it behind an "Add entry" button, FAB, modal, or collapsed bottom sheet — that's an extra click the PRD explicitly forbids.
+- **The entry form opens by default, every new session.** It's a bottom sheet (`SleepEntrySheet`) that's open with zero clicks the first time you land in a session; closing it (× or backdrop tap) is remembered only for that `sessionStorage`-scoped session, reopened via the + FAB. This is a deliberate, explicit reversal of an earlier stricter rule ("never gate behind a FAB/bottom sheet") — see PRD.md §3/§6 for the current reasoning, don't revert to the old rule without checking there first.
 - **Mobile-first**: design/build for a ~375–430px viewport first, single column, thumb-reachable primary action, no hover-dependent interactions. Widen up to desktop after, never the reverse.
 - **No duplicated logic**: duration math lives only in `lib/sleep/duration.ts`, DB access only in `lib/sleep/queries.ts`. See ARCHITECTURE.md's conventions checklist before adding a new function.
 - **UI is placeholder for now**: build clean, functional components — the project owner will refine visuals piece by piece later. Don't over-invest in polish speculatively.
