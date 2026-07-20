@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Chart tokens (dataviz skill palette, validated against this app's actual surfaces) */
+  --chart-series-1: #2a78d6;
+  --chart-grid: #e1e0d9;
+  --chart-ink-muted: #898781;
 }
 
 @theme inline {
@@ -16,6 +21,10 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --chart-series-1: #3987e5;
+    --chart-grid: #2c2c2a;
+    --chart-ink-muted: #898781;
   }
 }
 
