@@ -12,7 +12,7 @@ Just the app owner. Single-user, no accounts, no auth. The data model should not
 
 1. Open the app (on a phone, most of the time). Land on the dashboard: the trend chart is at the top.
 2. The quick-entry form is **open by default, as a bottom sheet, with zero clicks** — **bed time**, **wake time**, and an **optional note**, pre-filled with sensible defaults (bed time = yesterday 11:00 PM, wake time = now), editable via scroll-wheel pickers (see §6). The first time you land in a new session, nothing needs to be tapped to reach it.
-3. Tap **Save**. One submit, no confirmation step. The sheet stays open afterward (so a second entry, e.g. a nap, doesn't need reopening it).
+3. Tap **Save**. One submit, no confirmation step. The sheet **closes automatically on a successful save**, back to the chart — logging a second same-day entry (e.g. a nap) means reopening it via the + FAB, same as after an explicit close.
 4. Dashboard updates in place: the new entry is reflected in the chart immediately.
 5. The sheet can be dismissed (× or tapping the backdrop) to see the full chart unobstructed, and reopened any time via a **+** button. That closed/open choice is remembered only for the current session (`sessionStorage`) — the **next new session opens it again automatically**, so the zero-click default always comes back.
 6. The form is always available for a new entry (once the sheet's open) — there is no "one entry per day" restriction. An evening nap is logged the same way as a night's sleep: bed time and wake time for that nap. Both entries count toward the same day's total (see §5).
@@ -74,3 +74,4 @@ UI components are intentionally minimal/placeholder in this phase. The user will
 - Should History support bulk delete / CSV export?
 - If auth is added later: single passcode vs. magic link vs. full OAuth?
 - Should History group entries by day (showing the daily total with entries nested under it) once multi-entry days are common, rather than a flat list?
+- **Infinite/looping scroll for the Hour and Minute wheels** (00 continuing after 23, like Apple's pickers): explicitly deferred. `react-mobile-picker` matches the selected item by value rather than position, so the obvious "duplicate the list before/after" trick causes a visible snap-back glitch when you release on a duplicate copy — a real loop needs a purpose-built wheel for just those two columns (Date shouldn't loop; its range is bounded). Not started.

@@ -48,7 +48,8 @@ components/
     IconButton.tsx             # Bare circular icon-button primitive (no default size/color — callers always set their own, see the file's own comment) — used by the sheet's close × and its + FAB
   sleep/
     SleepEntryForm.tsx        # Quick-entry form (Server Component, <form action={createEntryAction}> calls the Server Action directly) — no chrome of its own; whatever renders it (SleepEntrySheet) supplies the surface/border
-    SleepEntrySheet.tsx        # 'use client' bottom sheet wrapping SleepEntryForm (passed in as `children` from the Server Component page, so the form itself stays server-rendered) — open/closed state via useSyncExternalStore + sessionStorage, see the file's own comment for why not useState+useEffect
+    SleepEntrySheet.tsx        # 'use client' bottom sheet wrapping SleepEntryForm (passed in as `children` from the Server Component page, so the form itself stays server-rendered) — open/closed state via useSyncExternalStore + sessionStorage (see the file's own comment for why not useState+useEffect), locks background scroll while open (see the file's own comment — otherwise dragging a wheel column lets touch gestures bounce the page behind it)
+    CloseSheetOnSave.tsx        # 'use client', renders nothing — rendered inside SleepEntryForm's <form>, watches useFormStatus() for the pending true→false edge and calls setEntrySheetOpen(false). Exists because SleepEntryForm is a Server Component with no client-side success callback of its own; this is the one place that closes the sheet on save
     SleepChart.tsx             # Hours-slept-per-day line/area chart ('use client', Recharts), fed by getDailyTotals() — no aggregation of its own
     SleepHistoryList.tsx        # Editable/deletable list of entries
 

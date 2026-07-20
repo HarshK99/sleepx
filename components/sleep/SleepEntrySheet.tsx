@@ -35,7 +35,8 @@ function getServerSnapshot(): boolean {
   return true
 }
 
-function setSheetOpen(open: boolean) {
+/** Exported so a component nested inside the form (CloseSheetOnSave) can close the sheet without needing Context. */
+export function setEntrySheetOpen(open: boolean) {
   sessionStorage.setItem(SESSION_KEY, open ? 'open' : 'closed')
   listeners.forEach((listener) => listener())
 }
@@ -46,16 +47,33 @@ export function SleepEntrySheet({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isOpen) return
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setSheetOpen(false)
+      if (event.key === 'Escape') setEntrySheetOpen(false)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
+  /**
+   * Locks background scroll while the sheet is open. Without this, dragging
+   * inside a wheel column on iOS/Android still lets the touch gesture
+   * rubber-band/bounce the page behind the sheet — the picker's own
+   * touchmove handler blocks native scrolling on itself, but nothing stops
+   * the body from reacting to the same gesture unless it's explicitly
+   * pinned. This is what caused the "whole UI moves a little" jitter.
+   */
+  useEffect(() => {
+    if (!isOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen])
+
   if (!isOpen) {
     return (
       <IconButton
-        onClick={() => setSheetOpen(true)}
+        onClick={() => setEntrySheetOpen(true)}
         aria-label="Log sleep"
         className="fixed bottom-6 right-6 z-40 h-14 w-14 bg-blue-600 text-3xl text-white shadow-lg active:bg-blue-700"
       >
@@ -69,20 +87,20 @@ export function SleepEntrySheet({ children }: { children: ReactNode }) {
       <button
         type="button"
         aria-label="Close"
-        onClick={() => setSheetOpen(false)}
+        onClick={() => setEntrySheetOpen(false)}
         className="fixed inset-0 z-40 bg-black/40"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Log sleep"
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-gray-200 bg-white p-4 shadow-xl dark:border-gray-800 dark:bg-gray-900"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl border-t border-gray-200 bg-white p-4 shadow-xl dark:border-gray-800 dark:bg-gray-900"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
       >
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Log sleep</h2>
           <IconButton
-            onClick={() => setSheetOpen(false)}
+            onClick={() => setEntrySheetOpen(false)}
             aria-label="Close"
             className="h-11 w-11 text-2xl text-gray-500 dark:text-gray-400"
           >

@@ -3,6 +3,8 @@ import { Field } from '@/components/ui/Field'
 import { SubmitButton } from '@/components/ui/SubmitButton'
 import { WheelDateTimePicker } from '@/components/ui/WheelDateTimePicker'
 
+import { CloseSheetOnSave } from './CloseSheetOnSave'
+
 type SleepEntryFormProps = {
   defaultBedTime: string
   defaultWakeTime: string
@@ -23,6 +25,7 @@ export function SleepEntryForm({ defaultBedTime, defaultWakeTime }: SleepEntryFo
         />
       </Field>
       <SubmitButton label="Save" pendingLabel="Saving…" />
+      <CloseSheetOnSave />
     </form>
   )
 }
