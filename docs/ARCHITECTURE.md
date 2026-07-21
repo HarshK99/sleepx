@@ -22,12 +22,14 @@ This is the modular/no-repetition mandate from the project owner. Concretely:
 - **Time entry granularity is 15 minutes** (:00/:15/:30/:45), enforced once: `components/ui/WheelDateTimePicker.tsx`'s Minute column is generated from `lib/sleep/duration.ts`'s `MINUTE_STEP` constant — nothing else hardcodes `15` or a minute list.
 - **Types** for the domain (`SleepEntry`, `NewSleepEntry`) are inferred from the Drizzle schema (`typeof sleepEntries.$inferSelect`) in `lib/sleep/types.ts` and imported everywhere — never redeclared.
 - **A Client Component that just adds interactive chrome around a Server Component gets it as `children`, never as a direct import.** `SleepEntrySheet` (client) never imports `SleepEntryForm` (server) itself — `app/page.tsx` (server) builds `<SleepEntryForm .../>` and passes it into `<SleepEntrySheet>{...}</SleepEntrySheet>`. Importing a Server Component file from inside a `'use client'` file would pull it into the client bundle; passing it as `children` from a Server Component parent keeps it server-rendered.
+- **A component that passes a function prop into a Client Component must itself be a Client Component.** Pre-rendered JSX can cross the Server→Client boundary as `children`/props (the rule above), but a plain function can't — the client needs to actually *call* it in the browser, and a server-only closure can't ship there ("Functions cannot be passed directly to Client Components unless ... marked with 'use server'"). `SleepChart`/`WakeTimeChart` pass formatter functions into `TrendChart`, so both are `'use client'` — don't try to make them Server Components again without also moving the formatters somewhere that doesn't require passing a function prop.
 
 ## Directory map
 
 ```
 app/
-  page.tsx                 # Dashboard: chart, then the entry form wrapped in SleepEntrySheet, fetches getDailyTotals() server-side
+  page.tsx                 # Dashboard: chart, then the entry form wrapped in SleepEntrySheet, fetches getDailyTotals() server-side — catches a failed fetch itself so a DB blip degrades the chart, not the whole page (the form must keep working)
+  error.tsx                 # Safety-net error boundary for anything else unexpected (e.g. a save that fails mid-flight) — "Try again" calls unstable_retry()
   history/
     page.tsx               # Full entry list, edit/delete
   actions/
@@ -40,17 +42,19 @@ lib/
   sleep/
     types.ts                 # SleepEntry, NewSleepEntry (inferred from schema)
     duration.ts               # computeDurationMinutes(), formatDuration(), getWakeDate(), daysBefore(), parseWallClockDateTime(), formatForTimeInput(), roundToNearestStep() — pure functions, unit-testable
-    queries.ts                 # getRecentEntries(), getAllEntries(), getEntryById(), getDailyTotals(), insertEntry(), updateEntry(), deleteEntry()
+    queries.ts                 # getRecentEntries(), getAllEntries(), getEntryById(), getDailyTotals(), getFirstWakeTimes(), insertEntry(), updateEntry(), deleteEntry()
 
 components/
   ui/                        # Generic, reusable, no domain knowledge (Button, Card, Field, IconButton, ...)
     WheelDateTimePicker.tsx   # Date/Hour/Minute scroll-wheel picker ('use client', wraps react-mobile-picker), writes a hidden input matching the same "YYYY-MM-DDTHH:mm" shape lib/sleep/duration.ts already parses — the Server Action contract didn't change
     IconButton.tsx             # Bare circular icon-button primitive (no default size/color — callers always set their own, see the file's own comment) — used by the sheet's close × and its + FAB
+    TrendChart.tsx              # 'use client' — the one Recharts line/area-chart implementation (axes, grid, tooltip, dot styling, CSS-var colors). Generic {date, value}[] in, formatters in as props, no sleep-domain knowledge. SleepChart and WakeTimeChart are both thin adapters over this — see "Two charts, one chart" below
   sleep/
     SleepEntryForm.tsx        # Quick-entry form (Server Component, <form action={createEntryAction}> calls the Server Action directly) — no chrome of its own; whatever renders it (SleepEntrySheet) supplies the surface/border
     SleepEntrySheet.tsx        # 'use client' bottom sheet wrapping SleepEntryForm (passed in as `children` from the Server Component page, so the form itself stays server-rendered) — open/closed state via useSyncExternalStore + sessionStorage (see the file's own comment for why not useState+useEffect), locks background scroll while open (see the file's own comment — otherwise dragging a wheel column lets touch gestures bounce the page behind it)
     CloseSheetOnSave.tsx        # 'use client', renders nothing — rendered inside SleepEntryForm's <form>, watches useFormStatus() for the pending true→false edge and calls setEntrySheetOpen(false). Exists because SleepEntryForm is a Server Component with no client-side success callback of its own; this is the one place that closes the sheet on save
-    SleepChart.tsx             # Hours-slept-per-day line/area chart ('use client', Recharts), fed by getDailyTotals() — no aggregation of its own
+    SleepChart.tsx             # Hours-slept-per-day chart — adapts DailyTotal[] to TrendChart's {date, value} shape, supplies hour/duration formatters. 'use client': it passes formatter *functions* into TrendChart as props, and functions can't cross the Server->Client boundary as props (only pre-rendered JSX via children, or actual Server Actions) — this bit us once already, don't try to make it a Server Component again
+    WakeTimeChart.tsx           # First-wake-time-of-day chart — adapts FirstWakeTime[] to TrendChart, supplies clock-time formatters and an auto-framed (non-zero-based) Y domain. Also 'use client', same reason
     SleepHistoryList.tsx        # Editable/deletable list of entries
 
 docs/
@@ -80,11 +84,25 @@ export const sleepEntries = pgTable('sleep_entries', {
 - `durationMinutes` is **derived, not user-entered** — computed by `lib/sleep/duration.ts` when an entry is created/updated, then stored so the chart query is a plain `SELECT`/`SUM` with no per-row computation.
 - **Day attribution rule: the date of `wakeTime`.** An entry with bed time 11 PM Monday and wake time 7 AM Tuesday belongs to Tuesday. This is computed at query time (`(wake_time AT TIME ZONE 'UTC')::date`) — never stored as a separate editable field, to avoid two sources of truth for "when did this sleep happen." `getWakeDate()` in `duration.ts` is the JS-side mirror of this same rule (used by the picker and the chart's tooltip); `daysBefore()` is the one place "N days ago" is computed, so query cutoffs, the picker's date range, and the chart's range all agree on what "N days" means.
 - **A day's chart total is `SUM(duration_minutes)` grouped by that derived wake date** across all entries (main sleep + naps) sharing it. `getDailyTotals(days)` in `lib/sleep/queries.ts` is the one place that does this grouping, and it always returns exactly `days` entries — zero-filled for days with no entries — so `SleepChart` consumes its output directly with no gap-filling or aggregation of its own.
+- **The first-wake-time chart uses `MIN(wake_time)` per day, not a "is this a nap" flag.** There isn't one, and none is needed: because day-attribution already groups entries by the calendar day of their own `wake_time`, a same-day nap's `wake_time` is always later than the main sleep's within that group, so `MIN()` picks the main sleep for free. `getFirstWakeTimes(days)` returns `wakeTimeMinutes: number | null` — `null`, not zero, for a day with no entry, since "00:00" would misreport a day with no data as a midnight wake-up.
 - Migrations via `drizzle-kit` (`drizzle-kit generate` + `drizzle-kit migrate`), committed to `drizzle/`.
 
-## Chart
+## Two charts, one chart implementation
 
-`SleepChart.tsx` is a single-series line/area chart (total minutes slept per day, `Recharts`' `AreaChart`+`Area`: a 2px line with a ~10%-opacity fill wash under it) — a deliberate choice over the `dataviz` skill's default "compare magnitude → bar" mapping for this data's job, made explicitly by the project owner; kept to the skill's mark spec for line/area (2px stroke, ≥8px hover dot, vertical crosshair cursor) rather than improvising. No legend needed (one series). The fill/stroke/grid/axis colors are CSS custom properties in `app/globals.css` (`--chart-series-1`, `--chart-grid`, `--chart-ink-muted`), validated with the skill's `validate_palette.js` against this app's actual light (`#ffffff`) and dark (`#111827`) surfaces — not hand-picked, and not the skill's own placeholder surfaces. The dashboard fetches `getDailyTotals(14)` server-side in `app/page.tsx` and passes it straight to the chart, rendered **above** the entry form (also a deliberate order from the project owner — the earlier "form is the first thing on screen" framing in PRD.md §3 was updated to match); the 14-day range matches the picker's backfill window on purpose (resolves the "fixed vs. selectable range" question in PRD.md §8 — fixed 14 for v1, no range picker).
+`TrendChart.tsx` (`components/ui/`) is the single Recharts line/area implementation — axes, grid, tooltip, dot styling, CSS-var colors, all built once per the `dataviz` skill's mark spec for line/area (2px stroke, ~10%-opacity fill wash, ≥8px hover dot, vertical crosshair cursor). It takes generic `{date, value: number | null}[]` plus a `yTickFormatter`/`tooltipValueFormatter` pair and an optional `yDomain`, with zero knowledge of sleep as a domain.
+
+`SleepChart.tsx` and `WakeTimeChart.tsx` are both ~10-line adapters: map their own query result to `TrendChart`'s shape, supply formatters, done. Concretely:
+- **SleepChart** — total minutes slept per day (`getDailyTotals`), hour formatter ("7h" / "7.5h"), default (zero-based) Y domain — 0 is a meaningful floor for a duration.
+- **WakeTimeChart** — the *first* (earliest) wake time logged per day (`getFirstWakeTimes`) — deliberately excludes a later same-day nap, see the data-model note above — 12-hour clock formatter ("7:15 AM"), and `yDomain={['dataMin - 30', 'dataMax + 30']}` rather than the default: 0 minutes-since-midnight (literal midnight) isn't a meaningful floor for a clock-time chart, so anchoring at zero would compress the actual data (wake times clustered in one band) into a sliver at the top of the chart.
+
+Both are line/area over "compare magnitude → bar" (the `dataviz` skill's own default mapping for this job) — a deliberate choice made explicitly by the project owner for the first chart, and carried to the second for visual consistency. No legend on either (one series each). The dashboard fetches both server-side in `app/page.tsx` (in parallel via `Promise.all`) and renders them **above** the entry form (also a deliberate order from the project owner — the earlier "form is the first thing on screen" framing in PRD.md §3 was updated to match); both use a 14-day fixed range, matching the picker's backfill window on purpose (resolves the "fixed vs. selectable range" question in PRD.md §8 — fixed 14 for v1, no range picker).
+
+## Resilience to transient DB failures
+
+The Neon HTTP driver (`@neondatabase/serverless`) opens a fresh request per query rather than holding a connection open, and Neon's compute auto-suspends when idle — so an occasional `NeonDbError`/`TypeError: fetch failed` (cold-start or a network blip) is expected, confirmed in practice (not just theoretically) during this project's own dev testing. Three layers handle it, all in `app/page.tsx`, none in `queries.ts` (which stays a faithful, unopinionated DB access layer — retries and fallbacks are a page/presentation-layer decision):
+- `safeLoad()` retries a failed fetch **once**, after a fixed ~750ms delay, before giving up — cheap insurance against exactly the cold-start case (first query after idle wakes the compute, which can take a couple seconds; a bare failure without retrying would surface as broken even when the DB was simply slow to wake up). The delay only ever happens on the failure path, never on a normal load.
+- If the retry also fails, `safeLoad()` returns `null` and the page renders an inline "couldn't load chart" message in that chart's `Card` instead of throwing — the entry sheet/form below keeps working regardless (and the *other* chart, if only one fetch failed), since a read failure must never block logging an entry. One `safeLoad` helper, reused for both charts — not duplicated per chart.
+- `app/error.tsx` is the fallback for anything else unexpected (including a Server Action failing on save) — without it, an uncaught error blanks the entire page instead of showing a "Try again" screen.
 
 ## Environment variables
 

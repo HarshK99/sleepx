@@ -29,6 +29,7 @@ Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks
 - Optional free-text note per entry (e.g. "woke up twice", "afternoon nap")
 - Multiple entries per day (e.g. a night's sleep + a nap) — each logged independently, both count toward that day's total
 - Dashboard chart: **total** hours slept per day (sum of all that day's entries), fixed to the most recent 14 days (matches the picker's backfill window; no range selector in v1 — see §8)
+- Dashboard chart: **wake-up time** per day — the *first* (earliest) wake time logged that day, deliberately excluding a later same-day nap ("evening sleep"), same 14-day range
 - History page: full list of entries, each editable and deletable
 - Data persisted in Neon Postgres, deployed on Vercel
 

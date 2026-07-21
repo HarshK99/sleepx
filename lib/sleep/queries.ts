@@ -17,6 +17,9 @@ import type { SleepEntry } from './types'
  */
 const wakeDateSql = sql<string>`(${sleepEntries.wakeTime} AT TIME ZONE ${sql.raw(`'${APP_TIMEZONE}'`)})::date`
 
+/** Minutes since midnight (in APP_TIMEZONE) of the earliest wake_time in the group — see getFirstWakeTimes. */
+const firstWakeMinutesSql = sql<number>`extract(epoch from (min(${sleepEntries.wakeTime}) AT TIME ZONE ${sql.raw(`'${APP_TIMEZONE}'`)})::time) / 60`
+
 type EntryInput = {
   bedTime: Date
   wakeTime: Date
@@ -70,6 +73,17 @@ export async function getAllEntries(): Promise<SleepEntry[]> {
   return db.select().from(sleepEntries).orderBy(desc(sleepEntries.wakeTime))
 }
 
+/**
+ * The simplest possible query against this table — no joins, no grouping,
+ * no raw SQL, no AT TIME ZONE. Doubles as a connectivity smoke test: if this
+ * fails with the same "fetch failed" as the chart queries, that confirms
+ * the problem is the network path to Neon, not query complexity/content —
+ * a plain count() would complete or error identically regardless.
+ */
+export async function getEntryCount(): Promise<number> {
+  return db.$count(sleepEntries)
+}
+
 export async function getRecentEntries(days: number): Promise<SleepEntry[]> {
   const cutoff = daysBefore(new Date(), days - 1)
   return db
@@ -112,5 +126,44 @@ export async function getDailyTotals(days: number): Promise<DailyTotal[]> {
   return Array.from({ length: days }, (_, i) => {
     const date = getWakeDate(daysBefore(now, days - 1 - i))
     return { date, totalMinutes: totalsByDate.get(date) ?? 0 }
+  })
+}
+
+export type FirstWakeTime = {
+  date: string
+  /** Minutes since midnight, or null for a day with no logged entry — never zero-filled, since "00:00" would misrepresent a day with no data as a midnight wake-up. */
+  wakeTimeMinutes: number | null
+}
+
+/**
+ * The *earliest* wake time logged on each day — the main night's sleep, not
+ * a later same-day nap. This falls out of the day-attribution rule for
+ * free: a nap's wake_time is always later in the same calendar day than the
+ * main sleep's, so MIN(wake_time) per day picks the main sleep without
+ * needing to know which entry "is" the nap.
+ *
+ * Always returns exactly `days` entries like getDailyTotals, but gaps stay
+ * `null` rather than 0 — SleepChart's zero-fill doesn't apply here, there's
+ * no meaningful "zero" wake time.
+ */
+export async function getFirstWakeTimes(days: number): Promise<FirstWakeTime[]> {
+  const cutoff = daysBefore(new Date(), days - 1)
+
+  const rows = await db
+    .select({
+      date: wakeDateSql.as('date'),
+      wakeTimeMinutes: firstWakeMinutesSql.mapWith(Number).as('wake_time_minutes'),
+    })
+    .from(sleepEntries)
+    .where(gte(sleepEntries.wakeTime, cutoff))
+    .groupBy(wakeDateSql)
+    .orderBy(wakeDateSql)
+
+  const minutesByDate = new Map(rows.map((row) => [row.date, Math.round(row.wakeTimeMinutes)]))
+  const now = new Date()
+
+  return Array.from({ length: days }, (_, i) => {
+    const date = getWakeDate(daysBefore(now, days - 1 - i))
+    return { date, wakeTimeMinutes: minutesByDate.get(date) ?? null }
   })
 }
