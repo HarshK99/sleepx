@@ -91,9 +91,9 @@ export function getWakeDate(wakeTime: Date): string {
 /**
  * The calendar day `days` before `reference`, in APP_TIMEZONE, as an instant
  * at that day's midnight. The one place "N days ago" is computed — used for
- * both date-range generation (WheelDateTimePicker, getDailyTotals) and query
- * cutoffs (getRecentEntries), so they can't drift out of sync with each
- * other or with getWakeDate's day-attribution rule.
+ * both date-range generation (WheelDateTimePicker, getDailyTotals,
+ * getFirstWakeTimes) and their query cutoffs, so they can't drift out of
+ * sync with each other or with getWakeDate's day-attribution rule.
  */
 export function daysBefore(reference: Date, days: number): Date {
   if (APP_TIMEZONE !== 'UTC') {

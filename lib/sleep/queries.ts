@@ -73,26 +73,6 @@ export async function getAllEntries(): Promise<SleepEntry[]> {
   return db.select().from(sleepEntries).orderBy(desc(sleepEntries.wakeTime))
 }
 
-/**
- * The simplest possible query against this table — no joins, no grouping,
- * no raw SQL, no AT TIME ZONE. Doubles as a connectivity smoke test: if this
- * fails with the same "fetch failed" as the chart queries, that confirms
- * the problem is the network path to Neon, not query complexity/content —
- * a plain count() would complete or error identically regardless.
- */
-export async function getEntryCount(): Promise<number> {
-  return db.$count(sleepEntries)
-}
-
-export async function getRecentEntries(days: number): Promise<SleepEntry[]> {
-  const cutoff = daysBefore(new Date(), days - 1)
-  return db
-    .select()
-    .from(sleepEntries)
-    .where(gte(sleepEntries.wakeTime, cutoff))
-    .orderBy(desc(sleepEntries.wakeTime))
-}
-
 export type DailyTotal = {
   date: string
   totalMinutes: number

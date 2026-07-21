@@ -20,7 +20,7 @@ This is the modular/no-repetition mandate from the project owner. Concretely:
 - **Server Actions** (`app/actions/sleep-entries.ts`) are thin: validate input shape, call a `lib/sleep` function, revalidate. No business logic inline in the action.
 - **UI primitives** (button, card, labeled input, etc.) live in `components/ui/` and are reused, not re-implemented per feature component. Only extract a primitive once a second real usage appears — don't pre-build a component library speculatively.
 - **Time entry granularity is 15 minutes** (:00/:15/:30/:45), enforced once: `components/ui/WheelDateTimePicker.tsx`'s Minute column is generated from `lib/sleep/duration.ts`'s `MINUTE_STEP` constant — nothing else hardcodes `15` or a minute list.
-- **Types** for the domain (`SleepEntry`, `NewSleepEntry`) are inferred from the Drizzle schema (`typeof sleepEntries.$inferSelect`) in `lib/sleep/types.ts` and imported everywhere — never redeclared.
+- **Types** for the domain (`SleepEntry`) are inferred from the Drizzle schema (`typeof sleepEntries.$inferSelect`) in `lib/sleep/types.ts` and imported everywhere — never redeclared. Only add `NewSleepEntry`/`$inferInsert` back if something actually ends up needing it — it was removed once already for sitting unused.
 - **A Client Component that just adds interactive chrome around a Server Component gets it as `children`, never as a direct import.** `SleepEntrySheet` (client) never imports `SleepEntryForm` (server) itself — `app/page.tsx` (server) builds `<SleepEntryForm .../>` and passes it into `<SleepEntrySheet>{...}</SleepEntrySheet>`. Importing a Server Component file from inside a `'use client'` file would pull it into the client bundle; passing it as `children` from a Server Component parent keeps it server-rendered.
 - **A component that passes a function prop into a Client Component must itself be a Client Component.** Pre-rendered JSX can cross the Server→Client boundary as `children`/props (the rule above), but a plain function can't — the client needs to actually *call* it in the browser, and a server-only closure can't ship there ("Functions cannot be passed directly to Client Components unless ... marked with 'use server'"). `SleepChart`/`WakeTimeChart` pass formatter functions into `TrendChart`, so both are `'use client'` — don't try to make them Server Components again without also moving the formatters somewhere that doesn't require passing a function prop.
 
@@ -40,9 +40,9 @@ lib/
     client.ts               # Drizzle + Neon client singleton (reads DATABASE_URL)
     schema.ts                # Drizzle table definitions
   sleep/
-    types.ts                 # SleepEntry, NewSleepEntry (inferred from schema)
+    types.ts                 # SleepEntry (inferred from schema)
     duration.ts               # computeDurationMinutes(), formatDuration(), getWakeDate(), daysBefore(), parseWallClockDateTime(), formatForTimeInput(), roundToNearestStep() — pure functions, unit-testable
-    queries.ts                 # getRecentEntries(), getAllEntries(), getEntryById(), getDailyTotals(), getFirstWakeTimes(), insertEntry(), updateEntry(), deleteEntry()
+    queries.ts                 # getAllEntries(), getEntryById(), getDailyTotals(), getFirstWakeTimes(), insertEntry(), updateEntry(), deleteEntry()
 
 components/
   ui/                        # Generic, reusable, no domain knowledge (Button, Card, Field, IconButton, ...)

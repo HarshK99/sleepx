@@ -23,7 +23,7 @@ Read [PRD.md](PRD.md) (what/why) and [ARCHITECTURE.md](ARCHITECTURE.md) (module 
 ## Phase 2 — Domain logic (`lib/sleep`)
 
 - `duration.ts`: `computeDurationMinutes(bedTime, wakeTime)`, `formatDuration(minutes)`, `getWakeDate(wakeTime)` (the day-attribution rule from the PRD — wake date, not bed date).
-- `queries.ts`: `insertEntry`, `updateEntry`, `deleteEntry`, `getEntryById`, `getRecentEntries(days)`, `getAllEntries()`, `getDailyTotals(days)` (the one place that sums multiple same-day entries, e.g. a night + a nap).
+- `queries.ts`: `insertEntry`, `updateEntry`, `deleteEntry`, `getEntryById`, `getAllEntries()`, `getDailyTotals(days)` (the one place that sums multiple same-day entries, e.g. a night + a nap).
 
 **Deliverable:** every function above exercised once via a scratch script against the real DB — inserting an overnight entry and a same-day nap and confirming `getDailyTotals` sums them under one day.
 
