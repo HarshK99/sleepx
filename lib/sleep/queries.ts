@@ -1,4 +1,5 @@
 import { desc, eq, gte, sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 
 import { db } from '@/lib/db/client'
 import { sleepEntries } from '@/lib/db/schema'
@@ -17,8 +18,13 @@ import type { SleepEntry } from './types'
  */
 const wakeDateSql = sql<string>`(${sleepEntries.wakeTime} AT TIME ZONE ${sql.raw(`'${APP_TIMEZONE}'`)})::date`
 
-/** Minutes since midnight (in APP_TIMEZONE) of the earliest wake_time in the group — see getFirstWakeTimes. */
-const firstWakeMinutesSql = sql<number>`extract(epoch from (min(${sleepEntries.wakeTime}) AT TIME ZONE ${sql.raw(`'${APP_TIMEZONE}'`)})::time) / 60`
+/** Minutes since midnight (in APP_TIMEZONE) of the earliest value of `column` in the group — see getFirstWakeTimes/getFirstBedTimes. */
+function firstTimeOfDayMinutesSql(column: AnyPgColumn) {
+  return sql<number>`extract(epoch from (min(${column}) AT TIME ZONE ${sql.raw(`'${APP_TIMEZONE}'`)})::time) / 60`
+}
+
+const firstWakeMinutesSql = firstTimeOfDayMinutesSql(sleepEntries.wakeTime)
+const firstBedMinutesSql = firstTimeOfDayMinutesSql(sleepEntries.bedTime)
 
 type EntryInput = {
   bedTime: Date
@@ -145,5 +151,42 @@ export async function getFirstWakeTimes(days: number): Promise<FirstWakeTime[]> 
   return Array.from({ length: days }, (_, i) => {
     const date = getWakeDate(daysBefore(now, days - 1 - i))
     return { date, wakeTimeMinutes: minutesByDate.get(date) ?? null }
+  })
+}
+
+export type FirstBedTime = {
+  date: string
+  /** Minutes since midnight, or null for a day with no logged entry — never zero-filled, same reasoning as FirstWakeTime. */
+  bedTimeMinutes: number | null
+}
+
+/**
+ * The bed time of each day's *main* sleep, not a same-day nap's — mirrors
+ * getFirstWakeTimes' MIN(wake_time) trick, but for bed_time: a same-day
+ * nap's bed_time is always later in real time than the main sleep's
+ * (afternoon/evening vs. the previous night), so MIN(bed_time) within the
+ * same wake-date group picks the main sleep's bed time for free, no "is
+ * nap" flag needed. Still grouped by wake date, not bed date — day
+ * attribution is always by wake date, per the PRD.
+ */
+export async function getFirstBedTimes(days: number): Promise<FirstBedTime[]> {
+  const cutoff = daysBefore(new Date(), days - 1)
+
+  const rows = await db
+    .select({
+      date: wakeDateSql.as('date'),
+      bedTimeMinutes: firstBedMinutesSql.mapWith(Number).as('bed_time_minutes'),
+    })
+    .from(sleepEntries)
+    .where(gte(sleepEntries.wakeTime, cutoff))
+    .groupBy(wakeDateSql)
+    .orderBy(wakeDateSql)
+
+  const minutesByDate = new Map(rows.map((row) => [row.date, Math.round(row.bedTimeMinutes)]))
+  const now = new Date()
+
+  return Array.from({ length: days }, (_, i) => {
+    const date = getWakeDate(daysBefore(now, days - 1 - i))
+    return { date, bedTimeMinutes: minutesByDate.get(date) ?? null }
   })
 }
