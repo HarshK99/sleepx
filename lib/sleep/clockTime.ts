@@ -17,6 +17,17 @@ export function formatClockTime(minutesSinceMidnight: number): string {
 }
 
 /**
+ * Same as formatClockTime but without the internal space ("7AM" not "7 AM").
+ * Recharts' Y-axis word-wraps a tick label containing a space onto two
+ * lines whenever it doesn't fit the axis's reserved width, which "10 AM"/
+ * "11 AM" tended to trigger. Used only for axis ticks — the tooltip keeps
+ * the spaced, more readable formatClockTime.
+ */
+export function formatClockTimeCompact(minutesSinceMidnight: number): string {
+  return formatClockTime(minutesSinceMidnight).replace(' ', '')
+}
+
+/**
  * Shifts a raw 0-1439 "minutes since midnight" value onto a scale centered
  * on midnight (negative = before midnight, positive = after) instead of
  * wrapping at 0/1440. Bed times cluster around midnight (e.g. 11pm-2am), so

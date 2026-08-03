@@ -11,6 +11,17 @@ import { formatClockTime, toBedTimeAxisMinutes } from '@/lib/sleep/clockTime'
 import { HOUR_MS, daysBefore, formatDuration, formatForTimeInput } from '@/lib/sleep/duration'
 import { getDailyTotals, getFirstBedTimes, getFirstWakeTimes } from '@/lib/sleep/queries'
 
+/**
+ * Without this, Next decides nothing here looks "dynamic" (Drizzle-over-Neon
+ * queries aren't a tracked `fetch()`, and getDefaultTimes() below is just a
+ * plain `new Date()` call) and prerenders this page once at build/deploy
+ * time — freezing both the bed/wake date defaults *and* the chart data to
+ * whatever they were then. Confirmed via `next build`: without this line the
+ * route ships as "○ (Static)". Forces a fresh render (and fresh DB reads)
+ * on every request instead.
+ */
+export const dynamic = 'force-dynamic'
+
 const CHART_RANGE_DAYS = 14
 
 /** Fixed defaults per the PRD: bed time = yesterday 11 PM, wake time = today 7 AM, both in APP_TIMEZONE. */
@@ -37,6 +48,18 @@ function averageLoggedMinutes(dailyTotals: { totalMinutes: number }[]): number |
   const loggedDays = dailyTotals.filter((day) => day.totalMinutes > 0)
   if (loggedDays.length === 0) return null
   return Math.round(loggedDays.reduce((sum, day) => sum + day.totalMinutes, 0) / loggedDays.length)
+}
+
+/**
+ * getDailyTotals(days) returns oldest-first, so the last entry is always
+ * today's (per the wake-date day-attribution rule) — no new query needed.
+ * Null (not 0) when nothing's logged yet today, same "0 would misreport a
+ * real value" reasoning as the other stats — most likely early in the day,
+ * before you've woken up and logged anything.
+ */
+function todaysLoggedMinutes(dailyTotals: { totalMinutes: number }[]): number | null {
+  const today = dailyTotals.at(-1)
+  return today && today.totalMinutes > 0 ? today.totalMinutes : null
 }
 
 /**
@@ -88,10 +111,18 @@ async function safeLoad<T>(loader: () => Promise<T>, label: string): Promise<T |
   }
 }
 
+/**
+ * flex/justify-between + h-full, not just stacked text: a CSS grid cell
+ * stretches to the row's tallest card (e.g. if a neighboring label wraps to
+ * two lines), and without this the value would stay pinned right under its
+ * own label instead of moving down with it — misaligning the numbers across
+ * cards in the same row. This keeps the value anchored to the card's bottom
+ * regardless of how many lines the label above it takes.
+ */
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="flex-1">
-      <h2 className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">{label}</h2>
+    <Card className="flex h-full flex-col justify-between gap-1">
+      <h2 className="text-xs font-medium text-gray-700 dark:text-gray-300">{label}</h2>
       <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</p>
     </Card>
   )
@@ -121,6 +152,7 @@ export default async function DashboardPage() {
     safeLoad(() => getFirstWakeTimes(CHART_RANGE_DAYS), 'first wake times'),
     safeLoad(() => getFirstBedTimes(CHART_RANGE_DAYS), 'first bed times'),
   ])
+  const todaysSleepMinutes = dailyTotals ? todaysLoggedMinutes(dailyTotals) : null
   const averageSleepMinutes = dailyTotals ? averageLoggedMinutes(dailyTotals) : null
   const averageWakeMinutes = firstWakeTimes
     ? averageMinutesOf(firstWakeTimes.map((day) => day.wakeTimeMinutes))
@@ -137,28 +169,32 @@ export default async function DashboardPage() {
           History
         </Link>
       </div>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <StatCard
-          label={`Avg. sleep (${CHART_RANGE_DAYS}d)`}
+          label="Today's sleep"
+          value={todaysSleepMinutes !== null ? formatDuration(todaysSleepMinutes) : '—'}
+        />
+        <StatCard
+          label={`Avg sleep (${CHART_RANGE_DAYS}d)`}
           value={averageSleepMinutes !== null ? formatDuration(averageSleepMinutes) : '—'}
         />
         <StatCard
-          label="Avg. bed time"
+          label="Avg bed time"
           value={averageBedMinutes !== null ? formatClockTime(averageBedMinutes) : '—'}
         />
         <StatCard
-          label="Avg. wake time"
+          label="Avg wake time"
           value={averageWakeMinutes !== null ? formatClockTime(averageWakeMinutes) : '—'}
         />
       </div>
       <ChartCard title={`Last ${CHART_RANGE_DAYS} days`}>
         {dailyTotals ? <SleepChart dailyTotals={dailyTotals} /> : <ChartError />}
       </ChartCard>
-      <ChartCard title="Bed time">
-        {firstBedTimes ? <BedTimeChart firstBedTimes={firstBedTimes} /> : <ChartError />}
-      </ChartCard>
       <ChartCard title="Wake-up time">
         {firstWakeTimes ? <WakeTimeChart firstWakeTimes={firstWakeTimes} /> : <ChartError />}
+      </ChartCard>
+      <ChartCard title="Bed time">
+        {firstBedTimes ? <BedTimeChart firstBedTimes={firstBedTimes} /> : <ChartError />}
       </ChartCard>
       <SleepEntrySheet>
         <SleepEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />

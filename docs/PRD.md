@@ -28,10 +28,11 @@ Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks
 - Quick-entry form (bed time + wake time → duration is derived, never entered manually)
 - Optional free-text note per entry (e.g. "woke up twice", "afternoon nap")
 - Multiple entries per day (e.g. a night's sleep + a nap) — each logged independently, both count toward that day's total
-- Dashboard stats: **average hours slept**, **average bed time**, and **average wake time**, all over the same fixed 14-day range as the charts, averaged only across days that actually have a logged entry (zero-filled/no-entry gap days are excluded so a sparse history isn't dragged toward zero) and, for bed/wake time, only the *main* sleep — a same-day nap never counts toward either average
+- Dashboard stats: **today's sleep so far**, **average hours slept**, **average bed time**, and **average wake time** — the latter three over the same fixed 14-day range as the charts, averaged only across days that actually have a logged entry (zero-filled/no-entry gap days are excluded so a sparse history isn't dragged toward zero) and, for bed/wake time, only the *main* sleep — a same-day nap never counts toward either average. Today's figure shows "—" rather than 0 before anything's been logged yet today.
 - Dashboard chart: **total** hours slept per day (sum of all that day's entries), fixed to the most recent 14 days (matches the picker's backfill window; no range selector in v1 — see §8)
 - Dashboard chart: **bed time** per day — the *first* (earliest) bed time logged that day, deliberately excluding a later same-day nap, same 14-day range
 - Dashboard chart: **wake-up time** per day — the *first* (earliest) wake time logged that day, deliberately excluding a later same-day nap ("evening sleep"), same 14-day range
+- Each chart draws a hardcoded goal reference line and a fixed axis scale built around it — **7h** for sleep duration, **11:30 PM** bed time, **7:00 AM** wake time (`lib/sleep/goals.ts`). Not user-configurable yet; revisit if/when goals should be editable.
 - History page: full list of entries, deletable (edit not built yet — `updateEntryAction` exists and is ready to wire up when needed)
 - Data persisted in Neon Postgres, deployed on Vercel
 

@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { SleepHistoryList } from '@/components/sleep/SleepHistoryList'
 import { getAllEntries } from '@/lib/sleep/queries'
 
+/** Same reasoning as app/page.tsx's `dynamic` export — this list must reflect live DB state, never a build-time snapshot. */
+export const dynamic = 'force-dynamic'
+
 export default async function HistoryPage() {
   const entries = await getAllEntries()
 
