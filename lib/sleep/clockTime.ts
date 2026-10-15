@@ -16,6 +16,16 @@ export function formatClockTime(minutesSinceMidnight: number): string {
 }
 
 /**
+ * Minutes since midnight of a "YYYY-MM-DDTHH:mm" wall-clock value (the
+ * picker's format, already in APP_TIMEZONE) — e.g. "2026-10-15T07:30" → 450.
+ * Reads the clock fields directly; no Date or timezone conversion needed.
+ */
+export function wallClockMinutesOfDay(value: string): number {
+  const [hour, minute] = value.slice(11, 16).split(':').map(Number)
+  return hour * 60 + minute
+}
+
+/**
  * Shifts a raw 0-1439 "minutes since midnight" value onto a scale centered
  * on midnight (negative = before midnight, positive = after) instead of
  * wrapping at 0/1440. Bed times cluster around midnight (e.g. 11pm-2am), so

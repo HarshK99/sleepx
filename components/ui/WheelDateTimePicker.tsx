@@ -13,14 +13,15 @@ const AROUND_VALUE_DAYS = 7
 type DateWindow = 'recent' | 'aroundValue'
 
 /**
- * Height === itemHeight on purpose: the visible window is exactly one row,
- * so only the selected value shows at rest. Neighboring values are still in
- * the DOM (both react-mobile-picker's Date column and LoopingWheelColumn's
- * Hour/Minute columns always render the full option list) but clipped by
- * overflow, and only become visible transiently as they slide through this
- * one-row window while actively scrolling.
+ * Three rows visible, selection in the middle on a raised band (Dawn sky,
+ * docs/design.md): the neighbours show what's one step away, so a half-awake
+ * thumb can see which way to spin. 44px rows keep each a proper touch target.
  */
 const ITEM_HEIGHT = 44
+const VISIBLE_ROWS = 3
+
+/** Fades the rows above and below the band; replaces react-mobile-picker's own stronger mask. */
+const WHEEL_MASK = 'linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28))'
 
 type WheelValue = {
   date: string
@@ -85,9 +86,7 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => String(hour).padSta
 const MINUTE_OPTIONS = Array.from({ length: 60 / MINUTE_STEP }, (_, i) => String(i * MINUTE_STEP).padStart(2, '0'))
 
 function itemLabelClassName(selected: boolean): string {
-  return selected
-    ? 'font-semibold text-gray-900 dark:text-gray-100'
-    : 'text-gray-400 dark:text-gray-600'
+  return selected ? 'font-semibold text-ink' : 'text-ink-3'
 }
 
 type WheelDateTimePickerProps = {
@@ -95,28 +94,40 @@ type WheelDateTimePickerProps = {
   label: string
   defaultValue: string
   dateWindow?: DateWindow
+  /** Called with the new "YYYY-MM-DDTHH:mm" value whenever any column changes — the form uses it for the live total and the sky. */
+  onChange?: (value: string) => void
 }
 
-export function WheelDateTimePicker({ name, label, defaultValue, dateWindow = 'recent' }: WheelDateTimePickerProps) {
+export function WheelDateTimePicker({ name, label, defaultValue, dateWindow = 'recent', onChange }: WheelDateTimePickerProps) {
   const initial = useMemo(() => splitValue(defaultValue), [defaultValue])
   const dateOptions = useMemo(() => buildDateOptions(dateWindow, initial.date), [dateWindow, initial.date])
-  const [date, setDate] = useState(initial.date)
-  const [hour, setHour] = useState(initial.hour)
-  const [minute, setMinute] = useState(initial.minute)
+  const [value, setValue] = useState(initial)
+
+  function change(next: Partial<WheelValue>) {
+    const merged = { ...value, ...next }
+    setValue(merged)
+    onChange?.(combineValue(merged))
+  }
 
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-      <input type="hidden" name={name} value={combineValue({ date, hour, minute })} />
-      <div className="flex rounded-lg border border-gray-300 bg-white text-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex flex-col gap-1.5">
+      <span className="label">{label}</span>
+      <input type="hidden" name={name} value={combineValue(value)} />
+      <div className="relative flex rounded-2xl bg-mist-inset text-base">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-1.5 rounded-[11px] bg-band shadow-[0_1px_2px_rgba(46,42,58,0.08)]"
+          style={{ top: ITEM_HEIGHT, height: ITEM_HEIGHT }}
+        />
         {/* Date doesn't loop (its range is bounded, per PRD.md §8) so it stays on react-mobile-picker. Hour/Minute use LoopingWheelColumn instead — see that file for why. */}
         <Picker
-          value={{ date }}
-          onChange={(next) => setDate(next.date)}
-          height={ITEM_HEIGHT}
+          value={{ date: value.date }}
+          onChange={(next) => change({ date: next.date })}
+          height={ITEM_HEIGHT * VISIBLE_ROWS}
           itemHeight={ITEM_HEIGHT}
           wheelMode="natural"
-          style={{ flex: '1.6 1 0%' }}
+          className="wheel-date"
+          style={{ flex: '1.7 1 0%', maskImage: WHEEL_MASK, WebkitMaskImage: WHEEL_MASK }}
         >
           <Picker.Column name="date">
             {dateOptions.map((option) => (
@@ -126,11 +137,25 @@ export function WheelDateTimePicker({ name, label, defaultValue, dateWindow = 'r
             ))}
           </Picker.Column>
         </Picker>
-        <LoopingWheelColumn options={HOUR_OPTIONS} value={hour} onChange={setHour} itemHeight={ITEM_HEIGHT} className="flex-1" />
-        <div className="flex items-center text-gray-400 dark:text-gray-600" aria-hidden>
+        <LoopingWheelColumn
+          options={HOUR_OPTIONS}
+          value={value.hour}
+          onChange={(hour) => change({ hour })}
+          itemHeight={ITEM_HEIGHT}
+          visibleRows={VISIBLE_ROWS}
+          className="flex-1"
+        />
+        <div className="relative flex items-center text-ink-3" aria-hidden>
           :
         </div>
-        <LoopingWheelColumn options={MINUTE_OPTIONS} value={minute} onChange={setMinute} itemHeight={ITEM_HEIGHT} className="flex-1" />
+        <LoopingWheelColumn
+          options={MINUTE_OPTIONS}
+          value={value.minute}
+          onChange={(minute) => change({ minute })}
+          itemHeight={ITEM_HEIGHT}
+          visibleRows={VISIBLE_ROWS}
+          className="flex-1"
+        />
       </div>
     </div>
   )

@@ -47,7 +47,7 @@ For the logged pain, considered, not built:
 What's built today, plus finishing [PLAN.md](PLAN.md):
 
 - Edit an entry from History in ≤2 clicks (PRD §3) — built in Phase 7
-- A decided look, set from §2's context of use (Phase 8, `docs/design.md`)
+- A decided look, set from §2's context of use: Dawn sky (Phase 8, [design.md](design.md))
 - Deploy to Vercel (Phase 9)
 
 Single user, no accounts.

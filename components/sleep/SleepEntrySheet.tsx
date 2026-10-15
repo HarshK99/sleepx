@@ -75,7 +75,7 @@ export function SleepEntrySheet({ children }: { children: ReactNode }) {
       <IconButton
         onClick={() => setEntrySheetOpen(true)}
         aria-label="Log sleep"
-        className="fixed bottom-6 right-6 z-40 h-14 w-14 bg-blue-600 text-3xl text-white shadow-lg active:bg-blue-700"
+        className="fixed bottom-6 right-6 z-30 h-[60px] w-[60px] bg-ink text-[30px] font-light text-[#fdf6f1] shadow-[0_8px_24px_rgba(46,42,58,0.25)] transition-transform duration-150 active:scale-[0.96]"
       >
         +
       </IconButton>
@@ -88,21 +88,22 @@ export function SleepEntrySheet({ children }: { children: ReactNode }) {
         type="button"
         aria-label="Close"
         onClick={() => setEntrySheetOpen(false)}
-        className="fixed inset-0 z-40 bg-black/40"
+        className="fixed inset-0 z-40 bg-[rgba(46,42,58,0.12)]"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Log sleep"
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl border-t border-gray-200 bg-white p-4 shadow-xl dark:border-gray-800 dark:bg-gray-900"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+        className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[90dvh] max-w-[430px] overflow-y-auto overscroll-contain rounded-t-[28px] bg-mist px-6 pt-2.5 shadow-[0_-1px_0_rgba(255,255,255,0.55)_inset,0_-12px_40px_rgba(46,42,58,0.1)] backdrop-blur-[24px] backdrop-saturate-[1.25]"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.25rem)', animation: 'sheet-rise 440ms var(--ease-out)' }}
       >
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Log sleep</h2>
+        <div aria-hidden className="mx-auto mb-2 h-1 w-9 rounded-full bg-horizon-soft" />
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="font-serif text-[21px] tracking-[-0.01em]">Log sleep</h2>
           <IconButton
             onClick={() => setEntrySheetOpen(false)}
             aria-label="Close"
-            className="h-11 w-11 text-2xl text-gray-500 dark:text-gray-400"
+            className="-mr-2.5 h-11 w-11 text-[26px] text-ink-3"
           >
             ×
           </IconButton>

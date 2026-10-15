@@ -12,7 +12,7 @@ Just the app owner. Single-user, no accounts, no auth. The data model should not
 
 ## 3. Core user flow
 
-1. Open the app (on a phone, most of the time). Land on the dashboard: the stat tiles and the sleep chart are at the top.
+1. Open the app (on a phone, most of the time). Land on the dashboard: today's total, the 14-day averages and the sleep chart.
 2. The quick-entry form is **open by default, as a bottom sheet, with zero clicks** — **bed time**, **wake time**, and an **optional note**, pre-filled with sensible defaults (bed time = yesterday 11:00 PM, wake time = today 7:00 AM — both fixed clock times in APP_TIMEZONE, not "now"), editable via scroll-wheel pickers (see §6). The first time you land in a new session, nothing needs to be tapped to reach it.
 3. Tap **Save**. One submit, no confirmation step. The sheet **closes automatically on a successful save**, back to the chart; a failed save (wake before bed, or a connection hiccup) keeps it open with a message and the entry still filled in. Logging a second same-day entry (e.g. a nap) means reopening it via the + FAB, same as after an explicit close.
 4. Dashboard updates in place: the new entry is reflected in the chart immediately.
@@ -33,13 +33,13 @@ Every feature traces to [product_sense.md](product_sense.md): the **goal** (a co
 | Entry sheet, open by default | Log a night with zero taps to reach the form, the first time each session; + button reopens it; closes on a successful save, stays open with a message on a failed one (§3) | Goal: same-morning logging | Built |
 | Default times | Start from bed 11 PM yesterday, wake 7 AM today (fixed clock times in APP_TIMEZONE), so most nights need little change | Goal | Built |
 | Scroll-wheel time pickers | Pick date / hour / minute one-thumbed, in 15-minute steps; hour and minute wheels loop (§6) | Goal | Built |
+| Live total while picking | See the night's total, bed → wake, and how it compares with 7h update as the wheels spin, so a wrong time is caught before Save | Goal: honest record | Built (Phase 8) |
 | 14-day backfill | Log a missed night up to 14 days back | Pain: "guessed later" | Built |
 | Several entries per day | Log a nap separately; it counts toward that day's total (§5) | Goal, decision | Built |
 | Optional note | Add context like "woke up twice" that makes a night's numbers honest | Goal: honest record | Built |
-| Today's sleep tile | See today's total so far ("—" before anything's logged) | Decision | Built |
-| Avg sleep tile | See average hours over 14 days, counting only days with an entry | Decision | Built |
-| Avg bed / wake time tiles | See the typical main-sleep bed and wake time over 14 days (naps excluded) | Decision: "change something" half | Built |
-| Sleep chart | See total hours per day for the last 14 days against a fixed 7h line (`lib/sleep/goals.ts`, not user-configurable) | Decision | Built |
+| Today's total | See today's total so far, standing on the horizon, with how far above or under 7h it is ("Not logged yet" before anything's logged) | Decision | Built (a tile until Phase 8) |
+| 14-day averages | One line: average hours slept (days with an entry only), and the typical main-sleep bed and wake time (naps excluded) | Decision, incl. its "change something" half | Built (three tiles until Phase 8) |
+| Sleep chart | See total hours per day for the last 14 days against the 7h horizon (`lib/sleep/goals.ts`, not user-configurable); nights under 7h marked, days with no entry left as gaps | Decision | Built |
 | History: edit | Fix a wrong entry in ≤2 taps; the date wheel covers the entry's own date ±7 days, so old entries can be fixed | Goal: honest record | Built |
 | History: delete | Remove a duplicate or mistaken entry | Goal: honest record | Built |
 | Bed-time and wake-time charts | Per-day bed and wake time against 11:30 PM / 7 AM goal lines | "What to change", not the chosen decision; goals the owner doesn't have | Removed 2026-10-15 |
@@ -82,7 +82,7 @@ Design rules:
 
 ## 7. UI status
 
-Today's UI is a placeholder: functional, cleanly structured, easy to restyle. The look gets decided once in the design phase ([PLAN.md](PLAN.md) Phase 8), recorded in `docs/design.md`. After that the owner still refines each piece individually, but inside that direction and its tokens. Until Phase 8 is done, don't polish visuals speculatively.
+The look is decided: **Dawn sky**, recorded in [design.md](design.md) (Phase 8, 2026-10-15). The owner still refines each piece individually, but inside that direction and its tokens; a change that breaks it means revisiting design.md on purpose.
 
 ## 8. Open questions / backlog (revisit later)
 

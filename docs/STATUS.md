@@ -4,32 +4,34 @@ Last updated: 2026-10-15
 
 ## Where the next phase starts
 
-**Phase 8 — Design direction** ([PLAN.md](PLAN.md#phase-8--design-direction)), once the owner has done Phase 7's phone check below. It runs the new design step from HOW_I_WORK.md with `interface-design`, and ends with `docs/design.md` and the tokens applied. Type `start phase 8` in a new chat. Deploy is Phase 9.
+**Phase 9 — Deploy** ([PLAN.md](PLAN.md#phase-9--deploy)). It starts with the owner's setup steps: install the Vercel CLI, log in, and decide whether production uses the same Neon database as dev. Type `start phase 9` in a new chat.
 
 ## Done
 
-- Phases 0–6 (2026-07-19 → 2026-08-03): data layer, domain logic, Server Actions, UI primitives, bottom-sheet entry form, charts and four stat tiles.
-- Feature check (2026-10-15, after Phase 7): PRD §4 is now a feature table, each row traced to product_sense.md. Removed the bed-time and wake-time charts and their 11:30 PM / 7 AM goal lines: they served "what to change", not the chosen decision, and encoded goals the owner doesn't have. Data untouched; avg bed/wake tiles kept. Kept the optional note (it makes the record honest, adds no click).
+- Phases 0–6 (2026-07-19 → 2026-08-03): data layer, domain logic, Server Actions, UI primitives, bottom-sheet entry form, charts.
 - Build OS check and product-sense pass (2026-10-15): [product_sense.md](product_sense.md); PLAN.md in phase format; PRD and ARCHITECTURE in line with the code.
-- Phase 7 (2026-10-15), code side:
-  - Edit in History: Edit (1 tap) swaps the row for the shared entry form; Save is the 2nd tap.
-  - Editing an old entry: the Date column shows the entry's own date ±7 days, never past today (owner's choice).
-  - A failed save keeps the form open with a message and the entry still filled in, in both the sheet and History. Create/update now return a result instead of throwing.
-  - Wake before bed shows "Wake time must be after bed time." in the form instead of the full-page error.
+- Phase 7 (2026-10-15): edit in History (≤2 taps; old entries editable via a ±7-day date window); failed saves keep the form open with a message; wake-before-bed shown in the form.
+- Feature check (2026-10-15): PRD §4 is a traced feature table. Bed-time and wake-time charts removed; three "considered" features listed with build conditions.
+- Phase 8 (2026-10-15): design direction **Dawn sky**, recorded in [design.md](design.md) and applied to the whole app:
+  - Tokens in `app/globals.css` (sky, plum ink, apricot accent, mist surfaces; Fraunces + Figtree); no `gray-*`/`blue-*`/`dark:` utilities left; no dark mode (owner's decision).
+  - The sky follows the wake wheel while logging (`DawnSky`); the sun meets the 7h horizon on the dashboard and live in the form (`SunScene`); sunrise wash + short vibration on Save; four stat tiles replaced by the hero and one averages line.
+  - Live total while picking: built (owner asked for it after the mock-ups).
+  - Pickers show three rows on a band; the chart is restyled (7h tick in the accent, under-7h dots, no-entry days as gaps, 5h–10h scale).
+  - Mock-ups: A, B, C built as interactive HTML, then A v2; A v2 chosen and kept as `docs/design/mockups/dawn-sky.html`, the rest deleted.
 
 ## Not done
 
-- Phase 7 owner check: on the phone, edit a real entry and confirm the charts reflect it; log a new entry and confirm the sheet closes.
-- Phase 8: design direction. The look was never decided; today's UI is a placeholder (PRD §7).
-- Phase 9: deploy. Unknown whether a Vercel deploy exists; this folder isn't linked to a Vercel project and the Vercel CLI isn't installed.
+- Owner phone checks, still open: Phase 7 (edit a real entry, log a new one) and Phase 8 (does Dawn sky feel right on the phone, half-awake, in a dim room; does the sunrise play on a real save).
+- Phase 9: deploy.
 
 ## Decisions
 
 - v1 is single-user, no accounts. "People like me" (other self-trackers) is the later user.
-- Nothing new to build beyond finishing the plan: the only pain found ("forgot to log → guessed later") is small and logged with a revisit trigger.
+- Nothing new to build beyond the plan: the only pain found ("forgot to log → guessed later") is small and logged with a revisit trigger.
 - v1 leaves out: accounts, reminders, CSV export / bulk delete.
 - Success: over any 30 days, ≥28 nights logged and ≥90% logged the same day as waking.
-- One form for create and edit (`SleepEntryForm`); `NewEntryForm` closes the sheet on success; `CloseSheetOnSave` removed.
+- One form for create and edit (`SleepEntryForm`); `NewEntryForm` closes the sheet on success.
+- Dawn sky is the one look; the owner refines pieces inside it.
 
 ## Open questions
 
@@ -41,22 +43,14 @@ Last updated: 2026-10-15
 
 - `drizzle.config.ts` error message says `.env.local`; the project uses `.env`. Fixed in Phase 9.
 - A failed **delete** still goes to the full-page error screen. Acceptable for now: nothing being typed is lost.
+- Clock times are formatted two ways: the dashboard and form say "8 AM", History says "8:00 AM" (`formatClockTime` vs `Intl` in SleepHistoryList). Cosmetic; unify when History is next touched.
+- The sheet has a rise-in animation but closes instantly (it unmounts); on Save the sunrise covers it, on × it's abrupt.
 
-## Files changed in Phase 7
+## Files changed in Phase 8
 
-`app/actions/sleep-entries.ts`, `lib/sleep/duration.ts` (`isWakeAfterBed`), `components/ui/WheelDateTimePicker.tsx` (`dateWindow`), `components/sleep/SleepEntryForm.tsx` (now client, create + edit), `components/sleep/NewEntryForm.tsx` (new), `components/sleep/EditableEntryCard.tsx` (new), `components/sleep/SleepHistoryList.tsx`, `components/sleep/SleepEntrySheet.tsx` (comment), `app/page.tsx`, `components/sleep/CloseSheetOnSave.tsx` (deleted), `docs/ARCHITECTURE.md`, `docs/PRD.md`, `docs/PLAN.md`, `docs/STATUS.md`.
+`app/globals.css` (tokens), `app/layout.tsx` (fonts), `app/page.tsx`, `app/history/page.tsx`, `app/error.tsx`, `components/sleep/DawnSky.tsx` (new), `components/sleep/SunScene.tsx` (new), `components/sleep/SleepEntryForm.tsx`, `components/sleep/SleepEntrySheet.tsx`, `components/sleep/SleepHistoryList.tsx`, `components/sleep/EditableEntryCard.tsx`, `components/sleep/SleepChart.tsx`, `components/ui/TrendChart.tsx`, `components/ui/WheelDateTimePicker.tsx`, `components/ui/LoopingWheelColumn.tsx`, `components/ui/Button.tsx`, `components/ui/Field.tsx`, `components/ui/Card.tsx`, `lib/sleep/clockTime.ts` (`wallClockMinutesOfDay`), `docs/design.md` (new), `docs/design/mockups/dawn-sky.html` (new), `docs/ARCHITECTURE.md`, `docs/PRD.md`, `docs/PLAN.md`, `docs/product_sense.md`, `docs/STATUS.md`, `CLAUDE.md`.
 
-## Decided after the feature check (2026-10-15)
+## Checks (Phase 8)
 
-- Build OS now has a design step (HOW_I_WORK.md): context of use → feel in one line → 2–3 directions, each built as one real screen → tokens → screens with every state → check. Direction is set once; the owner refines piece by piece inside it.
-- SleepX: design is Phase 8, before deploy (now Phase 9), so the live app launches with the real look.
-- PRD §4 now lists three considered features (completeness tile, missed-night marker, morning nudge), each with the condition for building it.
-
-## Files changed in the feature check
-
-`app/page.tsx`, `components/sleep/BedTimeChart.tsx` and `components/sleep/WakeTimeChart.tsx` (deleted), `components/ui/TrendChart.tsx` (dropped the `yAxisWidth` prop only those charts used), `lib/sleep/goals.ts`, `lib/sleep/clockTime.ts` (dropped `formatClockTimeCompact`), `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/PLAN.md`, `docs/STATUS.md`. Feature check: type-check and lint clean; dashboard screenshot at 390px (motion off) shows four tiles and the one sleep chart with its 7h line.
-
-## Checks
-
-- Run: type-check (`tsc --noEmit`) and lint, both clean. Browser at 390px width, in Edge with motion off, against the dev server: History renders with Edit/Delete per row; Edit opens the form with the entry's own times and note; a July entry's date wheel shows its own dates (Jul 18 → 19); wake before bed shows the in-form message, keeps the form open and keeps the note (rejected before any DB write); dashboard sheet still opens by default.
-- Not run: a successful save in the browser (it would change real data; left to the owner's phone check); a DB failure on save (can't simulate locally; the code path returns the message, untested); production build; tests (none exist).
+- Run: type-check and lint, both clean. In Edge at 390px (motion on) against the owner's dev server: dashboard with the sheet open; wake wheel moved to 9 AM (live total 10h, "3h above 7h", sky brighter); dashboard with real data (7h 15m, sun just over the horizon); chart (7h tick in the accent, under-7h nights as apricot dots); History list; History edit; wake-before-bed error in edit (rejected before any DB write). No console errors.
+- Not run: a real save in the browser (would change real data; the sunrise was verified in the mock-up only); the phone itself; production build; tests (none exist).

@@ -28,7 +28,7 @@ export function EditableEntryCard({ entryId, bedTime, wakeTime, note, children }
 
   if (isEditing) {
     return (
-      <Card>
+      <Card className="my-3">
         <SleepEntryForm
           entryId={entryId}
           defaultBedTime={bedTime}
@@ -42,7 +42,7 @@ export function EditableEntryCard({ entryId, bedTime, wakeTime, note, children }
   }
 
   return (
-    <Card className="flex items-start justify-between gap-3">
+    <div className="flex items-center justify-between gap-3 py-4">
       {children}
       <div className="flex shrink-0 flex-col gap-2">
         <Button type="button" variant="secondary" onClick={() => setIsEditing(true)}>
@@ -55,6 +55,6 @@ export function EditableEntryCard({ entryId, bedTime, wakeTime, note, children }
           </Button>
         </form>
       </div>
-    </Card>
+    </div>
   )
 }

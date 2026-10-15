@@ -11,25 +11,21 @@ function formatHourTick(minutes: number): string {
 }
 
 /**
- * Fixed 4h-14h domain with clean 2h ticks — replaces Recharts' auto-scaled
- * domain, which produced odd fractional labels like "13.3h" depending on
- * the data's actual max. Starting at 4h (instead of 0) trims the dead space
- * below any realistic night's sleep, giving the meaningful band more
- * vertical resolution — the trade-off is that a night under 4h (or a
- * zero-filled no-entry day, which SleepChart renders as 0, not null) clips
- * flat at the floor instead of showing its true depth. A real night far
- * past 14h would likewise just clip at the top; both are acceptable for a
- * hardcoded-for-now scale.
+ * Fixed 5h-10h domain with ticks at 5h / 7h / 9h — tight around where real
+ * nights fall, so the band around the 7h horizon gets the vertical room
+ * (Dawn sky, docs/design.md). Recharts widens the domain itself if a night
+ * falls outside it, so nothing is hidden; the ticks stay round either way.
  */
-const Y_DOMAIN: [number, number] = [240, 840]
-const Y_TICKS = [240, 360, 480, 600, 720, 840]
+const Y_DOMAIN: [number, number] = [300, 600]
+const Y_TICKS = [300, 420, 540]
 
 type SleepChartProps = {
   dailyTotals: DailyTotal[]
 }
 
 export function SleepChart({ dailyTotals }: SleepChartProps) {
-  const data: TrendPoint[] = dailyTotals.map((day) => ({ date: day.date, value: day.totalMinutes }))
+  // A day with nothing logged is a gap in the line, not a dive to zero: getDailyTotals zero-fills, and 0 would read as "slept 0h".
+  const data: TrendPoint[] = dailyTotals.map((day) => ({ date: day.date, value: day.totalMinutes > 0 ? day.totalMinutes : null }))
 
   return (
     <TrendChart
@@ -39,7 +35,6 @@ export function SleepChart({ dailyTotals }: SleepChartProps) {
       yDomain={Y_DOMAIN}
       yTicks={Y_TICKS}
       goalValue={SLEEP_GOAL_MINUTES}
-      goalLabel="7h goal"
     />
   )
 }

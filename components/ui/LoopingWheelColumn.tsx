@@ -28,18 +28,22 @@ export function LoopingWheelColumn({
   value,
   onChange,
   itemHeight,
+  visibleRows = 1,
   className = '',
 }: {
   options: string[]
   value: string
   onChange: (value: string) => void
   itemHeight: number
+  /** Odd number of rows shown at once; the selected one sits in the middle. Padding above/below keeps scrollTop = index × itemHeight either way. */
+  visibleRows?: number
   className?: string
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const isRecentering = useRef(false)
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const blockHeight = options.length * itemHeight
+  const edgePadding = ((visibleRows - 1) / 2) * itemHeight
 
   function indexToScrollTop(blockIndex: number, optionIndex: number): number {
     return (blockIndex * options.length + optionIndex) * itemHeight
@@ -90,26 +94,25 @@ export function LoopingWheelColumn({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className={`no-scrollbar snap-y snap-mandatory overflow-y-scroll overscroll-contain ${className}`}
+      className={`no-scrollbar relative snap-y snap-mandatory overflow-y-scroll overscroll-contain ${className}`}
       style={{
-        height: itemHeight,
-        maskImage: 'linear-gradient(to top, transparent, transparent 5%, white 20%, white 80%, transparent 95%, transparent)',
-        WebkitMaskImage:
-          'linear-gradient(to top, transparent, transparent 5%, white 20%, white 80%, transparent 95%, transparent)',
+        height: itemHeight * visibleRows,
+        paddingTop: edgePadding,
+        paddingBottom: edgePadding,
+        maskImage: 'linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28))',
+        WebkitMaskImage: 'linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28))',
       }}
     >
       {repeated.map((option, i) => (
         <div
           key={i}
           onClick={() => handleItemClick(i % options.length)}
-          className="flex items-center justify-center text-sm"
-          style={{ height: itemHeight, scrollSnapAlign: 'start' }}
+          className="flex items-center justify-center"
+          style={{ height: itemHeight, scrollSnapAlign: 'center' }}
         >
           <span
             className={
-              option === value
-                ? 'font-semibold text-gray-900 dark:text-gray-100'
-                : 'text-gray-400 dark:text-gray-600'
+              option === value ? 'font-semibold text-ink tabular-nums' : 'text-ink-3 tabular-nums'
             }
           >
             {option}

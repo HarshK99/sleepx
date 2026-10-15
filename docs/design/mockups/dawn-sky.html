@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SleepX — A v2. Dawn sky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  Direction A v2 — Dawn sky. The light is the interface.
+  1. Sky follows the wheel: while logging, a later wake time brightens the sky, live.
+  2. Sun meets the horizon: the sun rises with the night's total and clears the
+     horizon at 7h — on the dashboard and live in the sheet. "Enough?" without reading.
+  3. Sunrise on Save: light washes up from the thumb across the screen.
+  4. No stat boxes: the number sits on the horizon; averages are one quiet line.
+*/
+:root {
+  --light: 0.15; /* 0 = pre-dawn, 1 = full morning; set by JS */
+  --predawn-top: #b9b4cb;
+  --predawn-mid: #d3c6cf;
+  --predawn-low: #e2c0b4;
+  --sunrise-top: #dcd9ea;
+  --sunrise-mid: #f6e0d3;
+  --sunrise-low: #f7bd93;
+  --plum-ink: #2e2a3a;
+  --plum-ink-2: rgba(46, 42, 58, 0.72);
+  --plum-ink-3: rgba(46, 42, 58, 0.5);
+  --horizon: rgba(46, 42, 58, 0.22);
+  --horizon-soft: rgba(46, 42, 58, 0.12);
+  --apricot: #f0a274;
+  --apricot-deep: #c66a3c;
+  --sun-core: #fff4e4;
+  --sun-glow: #ffc996;
+  --mist: rgba(252, 244, 239, 0.66);
+  --mist-inset: rgba(46, 42, 58, 0.07);
+  --alarm: #a8413a;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --serif: 'Fraunces', Georgia, serif;
+  --sans: 'Figtree', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  min-height: 100dvh; font-family: var(--sans); color: var(--plum-ink);
+  background: linear-gradient(180deg, var(--predawn-top), var(--predawn-mid) 46%, var(--predawn-low));
+  background-attachment: fixed;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, var(--sunrise-top), var(--sunrise-mid) 44%, var(--sunrise-low));
+  opacity: var(--light); transition: opacity 700ms var(--ease-out);
+}
+.app { max-width: 430px; margin: 0 auto; padding: 20px 24px 140px; }
+.top { display: flex; justify-content: space-between; align-items: baseline; }
+.brand { font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.nav { font-size: 14px; font-weight: 500; color: var(--plum-ink-2); text-decoration: none; padding: 12px 0 12px 12px; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--plum-ink-3); }
+
+/* The scene: sky window, sun, horizon. Used on the dashboard and, smaller, in the sheet. */
+.scene { position: relative; }
+.sky { position: relative; overflow: hidden; }
+.sun {
+  position: absolute; right: 8px; border-radius: 50%;
+  background: radial-gradient(circle, var(--sun-core) 0 34%, var(--sun-glow) 52%, rgba(255, 201, 150, 0) 70%);
+  transition: bottom 1100ms var(--ease-out);
+}
+.horizon-line { height: 1px; background: var(--horizon); }
+
+.hero { margin-top: 24px; }
+.hero .sky { height: 210px; }
+.hero .sun { width: 150px; height: 150px; bottom: -150px; }
+.hero-value {
+  position: absolute; left: 0; bottom: -0.14em;
+  z-index: 1; font-family: var(--serif); font-size: 88px; font-weight: 300; line-height: 1; letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+.hero-value.empty { font-size: 34px; bottom: 10px; letter-spacing: -0.01em; color: var(--plum-ink-3); }
+.hero-under { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; font-size: 15px; color: var(--plum-ink-2); font-variant-numeric: tabular-nums; }
+.hero-under .vs { font-weight: 600; color: var(--apricot-deep); }
+
+.averages { margin-top: 30px; }
+.averages-line { margin-top: 8px; font-family: var(--serif); font-size: 18px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.averages-line span { color: var(--plum-ink-3); font-family: var(--sans); font-size: 14px; }
+
+.chart { margin-top: 30px; }
+.chart svg { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
+.chart text { font-family: var(--sans); font-size: 11px; fill: var(--plum-ink-3); }
+.chart .horizon-label { fill: var(--apricot-deep); font-weight: 600; }
+
+/* FAB + sheet */
+.fab { position: fixed; z-index: 30; right: 24px; bottom: calc(24px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 30px; border: 0;
+  background: var(--plum-ink); color: #fdf6f1; font-size: 30px; font-weight: 300; box-shadow: 0 8px 24px rgba(46, 42, 58, 0.25);
+  transition: transform 160ms var(--ease-out), opacity 200ms var(--ease-out); }
+.fab:active { transform: scale(0.96); }
+body.sheet-open .fab { opacity: 0; transform: scale(0.9); pointer-events: none; }
+.backdrop { position: fixed; z-index: 40; inset: 0; background: rgba(46, 42, 58, 0.12); opacity: 0; pointer-events: none; transition: opacity 280ms var(--ease-out); }
+body.sheet-open .backdrop { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 430px; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--mist); -webkit-backdrop-filter: blur(24px) saturate(1.25); backdrop-filter: blur(24px) saturate(1.25);
+  border-radius: 28px 28px 0 0; box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.55) inset, 0 -12px 40px rgba(46, 42, 58, 0.1);
+  padding: 10px 24px calc(20px + env(safe-area-inset-bottom)); transform: translateY(105%); transition: transform 440ms var(--ease-out); }
+body.sheet-open .sheet { transform: translateY(0); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--horizon-soft); margin: 0 auto 8px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.sheet-title { font-family: var(--serif); font-size: 21px; font-weight: 400; letter-spacing: -0.01em; }
+.close { width: 44px; height: 44px; border: 0; background: none; font-size: 26px; color: var(--plum-ink-3); margin-right: -10px; }
+
+/* The sheet's own little sky: a window onto the morning you're logging. */
+.live { margin: 2px -24px 0; padding: 0 24px; }
+.live .sky { height: 104px; border-radius: 18px; margin: 0 -8px; padding: 0 8px;
+  background: linear-gradient(180deg, var(--predawn-top), var(--predawn-low)); }
+.live .sky::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, var(--sunrise-top), var(--sunrise-low)); opacity: var(--light); transition: opacity 500ms var(--ease-out); }
+.live .sun { width: 84px; height: 84px; bottom: -84px; right: 18px; z-index: 1; transition: bottom 420ms var(--ease-out); }
+.live-value { position: absolute; left: 16px; bottom: -0.14em; z-index: 2; font-family: var(--serif); font-size: 56px; font-weight: 300; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.live .horizon-line { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; }
+.live-under { display: flex; justify-content: space-between; margin-top: 10px; font-size: 13px; color: var(--plum-ink-2); font-variant-numeric: tabular-nums; }
+.live-under .vs { font-weight: 600; color: var(--apricot-deep); }
+
+.field { margin-top: 14px; }
+.field .label { display: block; margin-bottom: 6px; }
+.picker { position: relative; display: flex; border-radius: 16px; background: var(--mist-inset); }
+.picker::before { content: ''; position: absolute; left: 6px; right: 6px; top: 40px; height: 40px; border-radius: 11px; background: rgba(255, 255, 255, 0.72); box-shadow: 0 1px 2px rgba(46, 42, 58, 0.08); pointer-events: none; }
+.colon { display: flex; align-items: center; color: var(--plum-ink-3); position: relative; }
+.wheel { position: relative; height: 120px; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain;
+  -webkit-mask-image: linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28)); mask-image: linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28)); }
+.wheel::-webkit-scrollbar { display: none; }
+.wheel.date { flex: 1.7; } .wheel.hour, .wheel.minute { flex: 1; }
+.wheel-item { height: 40px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: 16px; color: var(--plum-ink-3); font-variant-numeric: tabular-nums; cursor: pointer; }
+.wheel-item.sel { color: var(--plum-ink); font-weight: 600; }
+textarea { width: 100%; min-height: 48px; resize: none; border: 0; border-radius: 14px; background: var(--mist-inset); padding: 13px 14px; font: 16px var(--sans); color: var(--plum-ink); }
+textarea::placeholder { color: var(--plum-ink-3); }
+textarea:focus, .save:focus-visible { outline: 2px solid var(--apricot-deep); outline-offset: 2px; }
+.error { min-height: 20px; margin-top: 10px; font-size: 14px; color: var(--alarm); }
+.save { width: 100%; height: 56px; margin-top: 4px; border: 0; border-radius: 18px; background: var(--apricot); color: var(--plum-ink); font: 600 17px var(--sans); box-shadow: 0 6px 18px rgba(198, 106, 60, 0.28); transition: transform 140ms var(--ease-out); }
+.save:active { transform: scale(0.97); }
+
+/* Sunrise on Save: light washes up from the thumb. */
+.sunrise { position: fixed; z-index: 60; width: 220vmax; height: 220vmax; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(255, 244, 228, 0.95) 0%, rgba(247, 189, 147, 0.55) 32%, rgba(247, 189, 147, 0) 62%);
+  transform: translate(-50%, -50%) scale(0.04); }
+.sunrise.go { animation: sunrise 1000ms var(--ease-out); }
+@keyframes sunrise { 0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.04); } 55% { opacity: 0.8; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .fab, .backdrop, body::before, .live .sky::after, .sun { transition-duration: 1ms; }
+  .sunrise.go { animation: none; }
+}
+</style>
+</head>
+<body class="sheet-open">
+<div class="app">
+  <header class="top"><span class="brand">SleepX</span><a class="nav" href="#">History</a></header>
+
+  <section class="scene hero">
+    <div class="label">Today</div>
+    <div class="sky"><div class="sun" id="heroSun"></div><div class="hero-value" id="heroValue"></div></div>
+    <div class="horizon-line"></div>
+    <div class="hero-under"><span id="heroMeta"></span><span class="vs" id="heroVs"></span></div>
+  </section>
+
+  <section class="averages">
+    <div class="label">14-day average</div>
+    <p class="averages-line" id="averages"></p>
+  </section>
+
+  <section class="chart">
+    <div class="label">Last 14 days</div>
+    <svg id="chart" viewBox="0 0 340 170" role="img" aria-label="Hours slept per day, last 14 days"></svg>
+  </section>
+</div>
+
+<button class="fab" id="fab" aria-label="Log sleep">+</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" role="dialog" aria-modal="true" aria-label="Log sleep">
+  <div class="grab"></div>
+  <div class="sheet-head"><h2 class="sheet-title">Log sleep</h2><button class="close" id="close" aria-label="Close">×</button></div>
+  <div class="live scene">
+    <div class="sky"><div class="sun" id="liveSun"></div><span class="live-value" id="liveValue"></span><div class="horizon-line"></div></div>
+    <div class="live-under"><span id="liveMeta"></span><span class="vs" id="liveVs"></span></div>
+  </div>
+  <div class="field"><span class="label">Bed time</span>
+    <div class="picker"><div class="wheel date" id="bedDate"></div><div class="wheel hour" id="bedHour"></div><span class="colon">:</span><div class="wheel minute" id="bedMinute"></div></div>
+  </div>
+  <div class="field"><span class="label">Wake time</span>
+    <div class="picker"><div class="wheel date" id="wakeDate"></div><div class="wheel hour" id="wakeHour"></div><span class="colon">:</span><div class="wheel minute" id="wakeMinute"></div></div>
+  </div>
+  <div class="field"><label class="label" for="note">Note (optional)</label><textarea id="note" rows="1" placeholder="Woke up twice, afternoon nap…"></textarea></div>
+  <p class="error" id="error" role="alert"></p>
+  <button class="save" id="save">Save</button>
+</div>
+<div class="sunrise" id="sunrise"></div>
+
+<script>
+/* ---------- shared mock core (same in all directions) ---------- */
+const ITEM = 40, DAY = 86400000;
+const today0 = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
+const dayAt = (ago) => new Date(today0.getTime() - ago * DAY);
+const fmtDur = (m) => { const h = Math.floor(m / 60), r = m % 60; return h === 0 ? `${r}m` : r === 0 ? `${h}h` : `${h}h ${r}m`; };
+const fmtClock = (m) => { const n = ((Math.round(m) % 1440) + 1440) % 1440, h = Math.floor(n / 60), mi = n % 60, p = h < 12 ? 'AM' : 'PM', h12 = h % 12 === 0 ? 12 : h % 12; return mi === 0 ? `${h12} ${p}` : `${h12}:${String(mi).padStart(2, '0')} ${p}`; };
+const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short' });
+const dateLabel = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+const BED = [-60, 30, 15, 45, 0, 60, -30, 30, 45, 15, 90, 30, 0];
+const WAKE = [450, 480, 465, 495, 450, 450, 420, 480, 465, 450, 480, 495, 465];
+const nights = BED.map((bed, i) => ({ ago: 13 - i, bed, wake: WAKE[i], minutes: WAKE[i] - bed }));
+
+function days() {
+  return Array.from({ length: 14 }, (_, k) => {
+    const ago = 13 - k, list = nights.filter((n) => n.ago === ago);
+    const first = list.slice().sort((a, b) => a.bed - b.bed)[0];
+    return { ago, total: list.reduce((s, n) => s + n.minutes, 0), first };
+  });
+}
+const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+function summary() {
+  const d = days(), logged = d.filter((x) => x.total > 0), t = d[13];
+  return { days: d, today: t.total || null, todayFirst: t.first, avgSleep: Math.round(mean(logged.map((x) => x.total))),
+    avgBed: mean(logged.map((x) => x.first.bed)), avgWake: mean(logged.map((x) => x.first.wake)) };
+}
+
+function makeWheel(el, labels, index, onChange, loop) {
+  const len = labels.length, copies = loop ? 5 : 1, mid = loop ? 2 : 0;
+  const pad = () => Object.assign(document.createElement('div'), { style: `height:${ITEM}px` });
+  el.append(pad());
+  for (let c = 0; c < copies; c++) labels.forEach((t, i) => {
+    const d = document.createElement('div'); d.className = 'wheel-item'; d.textContent = t;
+    d.onclick = () => el.scrollTo({ top: (c * len + i) * ITEM, behavior: 'smooth' }); el.append(d);
+  });
+  el.append(pad());
+  const items = el.querySelectorAll('.wheel-item');
+  let cur = index, timer;
+  const mark = () => { const raw = Math.round(el.scrollTop / ITEM), i = ((raw % len) + len) % len;
+    items.forEach((d, k) => d.classList.toggle('sel', k === raw)); if (i !== cur) { cur = i; onChange(i); } return raw; };
+  requestAnimationFrame(() => { el.scrollTop = (mid * len + index) * ITEM; mark(); });
+  el.addEventListener('scroll', () => { const raw = mark(); if (!loop) return; clearTimeout(timer);
+    timer = setTimeout(() => { const target = (mid * len + (((raw % len) + len) % len)) * ITEM; if (Math.abs(el.scrollTop - target) > 1) { el.scrollTop = target; mark(); } }, 140);
+  }, { passive: true });
+}
+
+const DATE_LABELS = Array.from({ length: 15 }, (_, k) => { const ago = 14 - k; return ago === 0 ? 'Today' : ago === 1 ? 'Yesterday' : dateLabel.format(dayAt(ago)); });
+const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'));
+const MINUTES = ['00', '15', '30', '45'];
+const pick = { bed: { d: 13, h: 23, m: 0 }, wake: { d: 14, h: 7, m: 0 } };
+const absMin = (p) => (p.d - 14) * 1440 + p.h * 60 + p.m * 15;
+function picked() {
+  const b = absMin(pick.bed), w = absMin(pick.wake), start = Math.floor(w / 1440) * 1440;
+  return { minutes: w - b, bed: b - start, wake: w - start, ago: -Math.floor(w / 1440) };
+}
+function wirePicker(which) {
+  makeWheel(document.getElementById(which + 'Date'), DATE_LABELS, pick[which].d, (i) => { pick[which].d = i; onPick(); }, false);
+  makeWheel(document.getElementById(which + 'Hour'), HOURS, pick[which].h, (i) => { pick[which].h = i; onPick(); }, true);
+  makeWheel(document.getElementById(which + 'Minute'), MINUTES, pick[which].m, (i) => { pick[which].m = i; onPick(); }, true);
+}
+const $ = (id) => document.getElementById(id);
+const isOpen = () => document.body.classList.contains('sheet-open');
+const setOpen = (open) => { document.body.classList.toggle('sheet-open', open); updateLight(); };
+$('fab').onclick = () => setOpen(true);
+$('close').onclick = $('backdrop').onclick = () => setOpen(false);
+addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+$('save').onclick = () => {
+  const n = picked();
+  if (n.minutes <= 0) { $('error').textContent = 'Wake time must be after bed time.'; return; }
+  nights.push(n); $('note').value = ''; onSaved(); render();
+};
+function onPick() { $('error').textContent = ''; renderLive(); updateLight(); }
+
+/* ---------- direction A v2 ---------- */
+const GOAL = 420; // 7h: the horizon
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+// How far the sun has risen: 0 = hidden below the horizon, 1 = just cleared it (7h), up to 1.35.
+const rise = (minutes) => clamp(minutes / GOAL, 0, 1.35);
+function placeSun(el, minutes) { const size = el.offsetWidth; el.style.bottom = `${-size + rise(minutes) * size}px`; }
+function vsHorizon(minutes) {
+  const diff = minutes - GOAL;
+  return diff === 0 ? 'on the 7h horizon' : diff > 0 ? `${fmtDur(diff)} above 7h` : `${fmtDur(-diff)} under 7h`;
+}
+// Sky follows the wheel: while logging, the light tracks the wake time (5 AM dark → 10 AM full).
+function updateLight() {
+  const s = summary(), n = picked();
+  const light = isOpen() ? clamp((n.wake - 300) / 300, 0.05, 1) : s.today ? 1 : 0.15;
+  document.documentElement.style.setProperty('--light', light.toFixed(3));
+}
+function renderLive() {
+  const n = picked(), ok = n.minutes > 0;
+  $('liveValue').textContent = ok ? fmtDur(n.minutes) : '—';
+  $('liveMeta').textContent = ok ? `${fmtClock(n.bed)} → ${fmtClock(n.wake)}` : '';
+  $('liveVs').textContent = ok ? vsHorizon(n.minutes) : '';
+  placeSun($('liveSun'), ok ? n.minutes : 0);
+}
+function render() {
+  const s = summary();
+  $('heroValue').textContent = s.today ? fmtDur(s.today) : 'Not logged yet';
+  $('heroValue').classList.toggle('empty', !s.today);
+  $('heroMeta').textContent = s.todayFirst ? `${fmtClock(s.todayFirst.bed)} → ${fmtClock(s.todayFirst.wake)}` : 'The sun’s still below the horizon.';
+  $('heroVs').textContent = s.today ? vsHorizon(s.today) : '';
+  placeSun($('heroSun'), s.today || 0);
+  $('averages').innerHTML = `${fmtDur(s.avgSleep)} <span>slept ·</span> ${fmtClock(s.avgBed)} <span>to bed ·</span> ${fmtClock(s.avgWake)} <span>up</span>`;
+  renderChart(s.days);
+  updateLight();
+}
+function renderChart(d) {
+  const W = 340, H = 150, top = 8, lo = 300, hi = 600, x0 = 28, x1 = W - 6;
+  const x = (k) => x0 + (k / 13) * (x1 - x0), y = (m) => top + (1 - (clamp(m, lo, hi) - lo) / (hi - lo)) * (H - top);
+  const pts = d.map((day, k) => day.total ? [x(k), y(day.total)] : null);
+  let line = '', area = '', run = [];
+  const flush = () => { if (run.length) { line += 'M' + run.map((p) => p.join(',')).join('L');
+    area += `M${run[0][0]},${H}L` + run.map((p) => p.join(',')).join('L') + `L${run[run.length - 1][0]},${H}Z`; run = []; } };
+  pts.forEach((p) => { if (p) run.push(p); else flush(); }); flush();
+  const goal = y(GOAL);
+  const ticks = [300, 420, 540].map((m) => `<text x="0" y="${y(m) + 4}">${m / 60}h</text>`).join('');
+  const xt = [0, 4, 8, 13].map((k) => `<text x="${x(k)}" y="${H + 18}" text-anchor="${k === 13 ? 'end' : 'middle'}">${k === 13 ? 'Today' : weekday.format(dayAt(d[k].ago))}</text>`).join('');
+  const dots = pts.map((p, k) => p ? `<circle cx="${p[0]}" cy="${p[1]}" r="${k === 13 ? 4 : 2.5}" fill="${d[k].total >= GOAL ? '#2e2a3a' : '#c66a3c'}"/>` : '').join('');
+  $('chart').innerHTML = `
+    <defs><linearGradient id="glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0a274" stop-opacity=".55"/><stop offset="1" stop-color="#f0a274" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#glow)"/>
+    <line x1="${x0}" x2="${x1}" y1="${goal}" y2="${goal}" stroke="#2e2a3a" stroke-opacity=".35" stroke-width="1"/>
+    <text class="horizon-label" x="${x1}" y="${goal + 16}" text-anchor="end">7h horizon</text>
+    <path d="${line}" fill="none" stroke="#2e2a3a" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}${ticks}${xt}`;
+}
+// Sunrise on Save: the light washes up from the thumb, the sheet drops, the sun rises on the dashboard.
+function onSaved() {
+  const r = $('save').getBoundingClientRect(), sr = $('sunrise');
+  sr.style.left = `${r.left + r.width / 2}px`; sr.style.top = `${r.top + r.height / 2}px`;
+  sr.classList.remove('go'); void sr.offsetWidth; sr.classList.add('go');
+  navigator.vibrate?.(12);
+  setOpen(false);
+}
+
+wirePicker('bed'); wirePicker('wake'); renderLive(); render();
+</script>
+</body>
+</html>

@@ -22,13 +22,13 @@ type SleepHistoryListProps = {
 
 export function SleepHistoryList({ entries }: SleepHistoryListProps) {
   if (entries.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">No entries logged yet.</p>
+    return <p className="py-10 text-center font-serif text-lg text-ink-3">No nights logged yet.</p>
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col border-t border-horizon-soft">
       {entries.map((entry) => (
-        <li key={entry.id}>
+        <li key={entry.id} className="border-b border-horizon-soft">
           <EditableEntryCard
             entryId={entry.id}
             bedTime={formatForTimeInput(entry.bedTime)}
@@ -36,13 +36,14 @@ export function SleepHistoryList({ entries }: SleepHistoryListProps) {
             note={entry.note}
           >
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {dateFormatter.format(entry.wakeTime)} · {formatDuration(entry.durationMinutes)}
+              <span className="label">{dateFormatter.format(entry.wakeTime)}</span>
+              <span className="mt-1 font-serif text-[26px] font-light leading-tight tracking-[-0.02em] tabular-nums">
+                {formatDuration(entry.durationMinutes)}
               </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm text-ink-2 tabular-nums">
                 {timeFormatter.format(entry.bedTime)} → {timeFormatter.format(entry.wakeTime)}
               </span>
-              {entry.note && <span className="text-sm text-gray-500 dark:text-gray-400">{entry.note}</span>}
+              {entry.note && <span className="mt-1 text-sm text-ink-3">{entry.note}</span>}
             </div>
           </EditableEntryCard>
         </li>

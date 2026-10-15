@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import type { ReactNode } from 'react'
 
-import { Card } from '@/components/ui/Card'
+import { DawnSky } from '@/components/sleep/DawnSky'
 import { SleepChart } from '@/components/sleep/SleepChart'
 import { NewEntryForm } from '@/components/sleep/NewEntryForm'
 import { SleepEntrySheet } from '@/components/sleep/SleepEntrySheet'
+import { SunScene } from '@/components/sleep/SunScene'
 import { formatClockTime, toBedTimeAxisMinutes } from '@/lib/sleep/clockTime'
 import { HOUR_MS, daysBefore, formatDuration, formatForTimeInput } from '@/lib/sleep/duration'
 import { getDailyTotals, getFirstBedTimes, getFirstWakeTimes } from '@/lib/sleep/queries'
@@ -109,39 +109,17 @@ async function safeLoad<T>(loader: () => Promise<T>, label: string): Promise<T |
   }
 }
 
-/**
- * flex/justify-between + h-full, not just stacked text: a CSS grid cell
- * stretches to the row's tallest card (e.g. if a neighboring label wraps to
- * two lines), and without this the value would stay pinned right under its
- * own label instead of moving down with it — misaligning the numbers across
- * cards in the same row. This keeps the value anchored to the card's bottom
- * regardless of how many lines the label above it takes.
- */
-function StatCard({ label, value }: { label: string; value: string }) {
+function LoadError({ what }: { what: string }) {
   return (
-    <Card className="flex h-full flex-col justify-between gap-1">
-      <h2 className="text-xs font-medium text-gray-700 dark:text-gray-300">{label}</h2>
-      <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</p>
-    </Card>
-  )
-}
-
-function ChartCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Card>
-      <h2 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{title}</h2>
-      {children}
-    </Card>
-  )
-}
-
-function ChartError() {
-  return (
-    <p className="flex h-48 items-center justify-center px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-      Couldn&rsquo;t load this chart — your entries are safe, this is just a connection hiccup. Try refreshing.
+    <p className="py-10 text-center text-sm text-ink-3">
+      Couldn&rsquo;t load {what} — your entries are safe, this is just a connection hiccup. Try refreshing.
     </p>
   )
 }
+
+/** Resting sky: pre-dawn until today is logged, full morning after (DawnSky; the form overrides it while open). */
+const PREDAWN_LIGHT = 0.15
+const MORNING_LIGHT = 1
 
 export default async function DashboardPage() {
   const defaults = getDefaultTimes()
@@ -159,35 +137,43 @@ export default async function DashboardPage() {
     ? averageMinutesOf(firstBedTimes.map((day) => (day.bedTimeMinutes === null ? null : toBedTimeAxisMinutes(day.bedTimeMinutes))))
     : null
 
+  const todaysBed = firstBedTimes?.at(-1)?.bedTimeMinutes ?? null
+  const todaysWake = firstWakeTimes?.at(-1)?.wakeTimeMinutes ?? null
+  const todaysCaption = !dailyTotals
+    ? 'Couldn’t load today — try refreshing.'
+    : todaysBed !== null && todaysWake !== null
+      ? `${formatClockTime(todaysBed)} → ${formatClockTime(todaysWake)}`
+      : 'The sun’s still below the horizon.'
+  const dash = (value: string | null) => value ?? '—'
+
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">SleepX</h1>
-        <Link href="/history" className="text-sm font-medium text-blue-600 dark:text-blue-400">
+    <main className="mx-auto flex w-full max-w-[430px] flex-1 flex-col px-6 pt-5 pb-36">
+      <DawnSky restingLight={todaysSleepMinutes !== null ? MORNING_LIGHT : PREDAWN_LIGHT} />
+      <header className="flex items-baseline justify-between">
+        <h1 className="font-serif text-xl font-medium tracking-[-0.01em]">SleepX</h1>
+        <Link href="/history" className="py-3 pl-3 text-sm font-medium text-ink-2">
           History
         </Link>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <StatCard
-          label="Today's sleep"
-          value={todaysSleepMinutes !== null ? formatDuration(todaysSleepMinutes) : '—'}
-        />
-        <StatCard
-          label={`Avg sleep (${CHART_RANGE_DAYS}d)`}
-          value={averageSleepMinutes !== null ? formatDuration(averageSleepMinutes) : '—'}
-        />
-        <StatCard
-          label="Avg bed time"
-          value={averageBedMinutes !== null ? formatClockTime(averageBedMinutes) : '—'}
-        />
-        <StatCard
-          label="Avg wake time"
-          value={averageWakeMinutes !== null ? formatClockTime(averageWakeMinutes) : '—'}
-        />
-      </div>
-      <ChartCard title={`Last ${CHART_RANGE_DAYS} days`}>
-        {dailyTotals ? <SleepChart dailyTotals={dailyTotals} /> : <ChartError />}
-      </ChartCard>
+      </header>
+      <section className="mt-6">
+        <h2 className="label">Today</h2>
+        <SunScene size="hero" minutes={todaysSleepMinutes} caption={todaysCaption} emptyLabel="Not logged yet" />
+      </section>
+      <section className="mt-8">
+        <h2 className="label">{CHART_RANGE_DAYS}-day average</h2>
+        <p className="mt-2 font-serif text-lg leading-normal tabular-nums">
+          {dash(averageSleepMinutes !== null ? formatDuration(averageSleepMinutes) : null)}{' '}
+          <span className="font-sans text-sm text-ink-3">slept ·</span>{' '}
+          {dash(averageBedMinutes !== null ? formatClockTime(averageBedMinutes) : null)}{' '}
+          <span className="font-sans text-sm text-ink-3">to bed ·</span>{' '}
+          {dash(averageWakeMinutes !== null ? formatClockTime(averageWakeMinutes) : null)}{' '}
+          <span className="font-sans text-sm text-ink-3">up</span>
+        </p>
+      </section>
+      <section className="mt-8">
+        <h2 className="label">Last {CHART_RANGE_DAYS} days</h2>
+        <div className="mt-3">{dailyTotals ? <SleepChart dailyTotals={dailyTotals} /> : <LoadError what="this chart" />}</div>
+      </section>
       <SleepEntrySheet>
         <NewEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />
       </SleepEntrySheet>

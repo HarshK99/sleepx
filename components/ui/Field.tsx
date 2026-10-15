@@ -8,8 +8,8 @@ type FieldProps = {
 
 export function Field({ label, htmlFor, children }: FieldProps) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={htmlFor} className="label">
         {label}
       </label>
       {children}

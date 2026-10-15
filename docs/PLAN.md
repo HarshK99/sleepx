@@ -40,6 +40,8 @@ Built 2026-07-19 → 2026-08-03. Kept short as a record; the code and ARCHITECTU
 
 ## Phase 8 — Design direction
 
+**Done 2026-10-15:** Dawn sky, recorded in [design.md](design.md); chosen mock-up kept at `docs/design/mockups/dawn-sky.html`. The plan below is kept as the record.
+
 **Goal:** decide SleepX's look once, from product sense, so the live app launches with it and later piece-by-piece refinement has a direction to stay inside. Follows the design step in HOW_I_WORK.md ("Set a design direction before building screens").
 
 **Inputs:** product_sense.md (§2 user: logs on the phone around waking or bedtime), PRD §4 feature table and §6 mobile-first rules, the current UI (`app/page.tsx`, `app/history/page.tsx`, `components/`, `app/globals.css`), the `interface-design` skill (the one design skill for this task; `ui-ux-pro-max` only for targeted lookups).
@@ -47,12 +49,12 @@ Built 2026-07-19 → 2026-08-03. Kept short as a record; the code and ARCHITECTU
 **Instructions** (one step at a time, each as an options question, waiting for the owner's answer):
 1. **Context of use.** Suggest it from product sense (in bed or just up, half-awake, often a dark room, one thumb), then confirm.
 2. **Feel in one line.** Agree it before anything is drawn.
-3. **Two or three distinct directions.** Build each as one real screen: the dashboard with the entry sheet open, on a throwaway route (e.g. `app/design-preview/[direction]/page.tsx`) with fixed sample data, so the real database isn't touched. Screenshot each at 390px with the shared tool on the owner's dev server. The owner picks one. Delete the preview route afterwards.
+3. **Two or three distinct directions.** Build each as a self-contained interactive HTML mock-up in `docs/design/mockups/` (dashboard + entry sheet, fixed sample data, working wheels and Save), viewed in the browser's device mode at phone width. The owner picks one; keep that file, delete the others. Built 2026-10-15: A (dawn sky), B (linen and ink), C (ember to day), then A v2 after A "didn't feel wow"; A v2 chosen and kept as `dawn-sky.html`.
 4. **Tokens.** Colour (light and dark), type scale, spacing, radius, motion, defined once in `app/globals.css` as CSS variables and used through Tailwind. Apply them across the existing components in place of hardcoded `gray-*`/`blue-*` utilities. This is a mechanical swap, not a layout redesign.
 5. **Screens.** In `docs/design.md`, one row per screen (dashboard, entry sheet, History, History edit, error page): job, primary action, and every state (empty, loading, error, success). Mark states that exist today vs. missing; build only the missing ones the owner agrees to.
 6. **Check.** Phone-width screenshots of every screen and state that can be reached without changing real data. Offer one line for the design results log in BUILD_OS.md section 5.
 
-**Deliverables:** `docs/design.md` (context, feel, chosen direction and why, the rejected ones in a line each, tokens, screen list); tokens in `app/globals.css`; components switched to them; preview route removed; ARCHITECTURE.md and CLAUDE.md updated to point at design.md.
+**Deliverables:** `docs/design.md` (context, feel, chosen direction and why, the rejected ones in a line each, tokens, screen list); tokens in `app/globals.css`; components switched to them; rejected mock-ups deleted; ARCHITECTURE.md and CLAUDE.md updated to point at design.md.
 
 **Done when:**
 - *I can check:* type-check and lint pass; screenshots of every screen at 390px match the chosen direction; no hardcoded colour utilities left outside the token layer.
