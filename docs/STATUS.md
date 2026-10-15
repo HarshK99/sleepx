@@ -4,7 +4,7 @@ Last updated: 2026-10-15
 
 ## Where the next phase starts
 
-**Phase 8 — Deploy** ([PLAN.md](PLAN.md#phase-8--deploy)), once the owner has done Phase 7's phone check below. Phase 8 starts with the owner's setup steps (Vercel CLI, login, database choice). Type `start phase 8` in a new chat.
+**Phase 8 — Design direction** ([PLAN.md](PLAN.md#phase-8--design-direction)), once the owner has done Phase 7's phone check below. It runs the new design step from HOW_I_WORK.md with `interface-design`, and ends with `docs/design.md` and the tokens applied. Type `start phase 8` in a new chat. Deploy is Phase 9.
 
 ## Done
 
@@ -20,7 +20,8 @@ Last updated: 2026-10-15
 ## Not done
 
 - Phase 7 owner check: on the phone, edit a real entry and confirm the charts reflect it; log a new entry and confirm the sheet closes.
-- Phase 8: deploy. Unknown whether a Vercel deploy exists; this folder isn't linked to a Vercel project and the Vercel CLI isn't installed.
+- Phase 8: design direction. The look was never decided; today's UI is a placeholder (PRD §7).
+- Phase 9: deploy. Unknown whether a Vercel deploy exists; this folder isn't linked to a Vercel project and the Vercel CLI isn't installed.
 
 ## Decisions
 
@@ -32,18 +33,24 @@ Last updated: 2026-10-15
 
 ## Open questions
 
-- Production database: same Neon DB as dev, or a separate one? Decide before Phase 8.
+- Production database: same Neon DB as dev, or a separate one? Decide before Phase 9.
 - Top risk, no mitigation chosen: the whole record lives in one database with no export or backup.
 - Product-level questions (one tracker or many, what the data answers, when to open it up): [product_sense.md §10](product_sense.md#10-open-questions).
 
 ## Known issues
 
-- `drizzle.config.ts` error message says `.env.local`; the project uses `.env`. Fixed in Phase 8.
+- `drizzle.config.ts` error message says `.env.local`; the project uses `.env`. Fixed in Phase 9.
 - A failed **delete** still goes to the full-page error screen. Acceptable for now: nothing being typed is lost.
 
 ## Files changed in Phase 7
 
 `app/actions/sleep-entries.ts`, `lib/sleep/duration.ts` (`isWakeAfterBed`), `components/ui/WheelDateTimePicker.tsx` (`dateWindow`), `components/sleep/SleepEntryForm.tsx` (now client, create + edit), `components/sleep/NewEntryForm.tsx` (new), `components/sleep/EditableEntryCard.tsx` (new), `components/sleep/SleepHistoryList.tsx`, `components/sleep/SleepEntrySheet.tsx` (comment), `app/page.tsx`, `components/sleep/CloseSheetOnSave.tsx` (deleted), `docs/ARCHITECTURE.md`, `docs/PRD.md`, `docs/PLAN.md`, `docs/STATUS.md`.
+
+## Decided after the feature check (2026-10-15)
+
+- Build OS now has a design step (HOW_I_WORK.md): context of use → feel in one line → 2–3 directions, each built as one real screen → tokens → screens with every state → check. Direction is set once; the owner refines piece by piece inside it.
+- SleepX: design is Phase 8, before deploy (now Phase 9), so the live app launches with the real look.
+- PRD §4 now lists three considered features (completeness tile, missed-night marker, morning nudge), each with the condition for building it.
 
 ## Files changed in the feature check
 

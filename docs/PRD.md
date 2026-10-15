@@ -43,6 +43,9 @@ Every feature traces to [product_sense.md](product_sense.md): the **goal** (a co
 | History: edit | Fix a wrong entry in ≤2 taps; the date wheel covers the entry's own date ±7 days, so old entries can be fixed | Goal: honest record | Built |
 | History: delete | Remove a duplicate or mistaken entry | Goal: honest record | Built |
 | Bed-time and wake-time charts | Per-day bed and wake time against 11:30 PM / 7 AM goal lines | "What to change", not the chosen decision; goals the owner doesn't have | Removed 2026-10-15 |
+| Record-completeness tile | See "28 of 30 nights logged" (product_sense.md §9's success measure) | Goal: complete record | Considered — build if the owner wants to watch the success measure without a DB query (record trust isn't a pain today) |
+| Missed-night marker | See on the dashboard that last night has no entry, while memory is fresh | Pain: "guessed later" | Considered — build if that pain's trigger fires (weekly, or guesses past 30 min) |
+| Morning nudge | A reminder after the usual wake time if nothing's logged | Pain: "guessed later" | Considered — only if the trigger fires *and* the missed-night marker didn't fix it; reminders are out of scope for v1 |
 
 **Out of scope for v1** (captured for later, not rejected):
 - User accounts / authentication
@@ -79,7 +82,7 @@ Design rules:
 
 ## 7. UI status
 
-UI components are intentionally minimal/placeholder in this phase. The user will share and refine each piece of UI individually — do not polish visuals speculatively; build functional, cleanly-structured components that are easy to restyle.
+Today's UI is a placeholder: functional, cleanly structured, easy to restyle. The look gets decided once in the design phase ([PLAN.md](PLAN.md) Phase 8), recorded in `docs/design.md`. After that the owner still refines each piece individually, but inside that direction and its tokens. Until Phase 8 is done, don't polish visuals speculatively.
 
 ## 8. Open questions / backlog (revisit later)
 
