@@ -19,6 +19,8 @@ Last updated: 2026-10-15
   - Pickers show three rows on a band; the chart is restyled (7h tick in the accent, under-7h dots, no-entry days as gaps, 5h–10h scale).
   - Mock-ups: A, B, C built as interactive HTML, then A v2; A v2 chosen and kept as `docs/design/mockups/dawn-sky.html`, the rest deleted.
 
+- Cleanup (2026-10-15, after Phase 8): removed the five unused Next.js starter images in `public/`, the never-called `getEntryById` query, and the `Card` primitive (one use left, inlined into `EditableEntryCard`, per ARCHITECTURE.md's second-use rule).
+
 ## Not done
 
 - Owner phone checks, still open: Phase 7 (edit a real entry, log a new one) and Phase 8 (does Dawn sky feel right on the phone, half-awake, in a dim room; does the sunrise play on a real save).

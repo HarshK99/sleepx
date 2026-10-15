@@ -14,7 +14,7 @@ Built 2026-07-19 → 2026-08-03. Kept short as a record; the code and ARCHITECTU
 | 1 — Data layer | `sleep_entries` schema, DB client, inferred types, first migration | — |
 | 2 — Domain logic | `duration.ts`, `clockTime.ts`, `goals.ts`, `queries.ts` | Added first-wake-time and first-bed-time queries (now behind the avg bed/wake tiles) |
 | 3 — Server Actions | create / update / delete actions | `updateEntryAction` is not wired to any UI yet (Phase 7) |
-| 4 — UI primitives | Button, Card, Field, IconButton, SubmitButton, TrendChart | A scroll-wheel date/time picker replaced the plain time input (PRD §6) |
+| 4 — UI primitives | Button, Card (inlined 2026-10-15, one use left), Field, IconButton, SubmitButton, TrendChart | A scroll-wheel date/time picker replaced the plain time input (PRD §6) |
 | 5 — Quick entry | Entry form in a bottom sheet, open by default each session, + button to reopen | Originally "form inline, no sheet"; reversed on purpose (PRD §3) |
 | 6 — Charts | Sleep line chart + four stat tiles | Originally one bar chart; line/area chosen on purpose. Bed-time and wake-time charts were built too, then removed 2026-10-15 after the feature check (PRD §4) |
 

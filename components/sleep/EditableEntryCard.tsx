@@ -4,7 +4,6 @@ import { useState, type ReactNode } from 'react'
 
 import { deleteEntryAction } from '@/app/actions/sleep-entries'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 
 import { SleepEntryForm } from './SleepEntryForm'
 
@@ -28,7 +27,7 @@ export function EditableEntryCard({ entryId, bedTime, wakeTime, note, children }
 
   if (isEditing) {
     return (
-      <Card className="my-3">
+      <div className="my-3 rounded-[22px] bg-mist-strong p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.5)_inset,0_8px_28px_rgba(46,42,58,0.1)] backdrop-blur-xl">
         <SleepEntryForm
           entryId={entryId}
           defaultBedTime={bedTime}
@@ -37,7 +36,7 @@ export function EditableEntryCard({ entryId, bedTime, wakeTime, note, children }
           onSaved={() => setIsEditing(false)}
           onCancel={() => setIsEditing(false)}
         />
-      </Card>
+      </div>
     )
   }
 

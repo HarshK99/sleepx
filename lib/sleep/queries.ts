@@ -70,11 +70,6 @@ export async function deleteEntry(id: string): Promise<void> {
   await db.delete(sleepEntries).where(eq(sleepEntries.id, id))
 }
 
-export async function getEntryById(id: string): Promise<SleepEntry | undefined> {
-  const [entry] = await db.select().from(sleepEntries).where(eq(sleepEntries.id, id)).limit(1)
-  return entry
-}
-
 export async function getAllEntries(): Promise<SleepEntry[]> {
   return db.select().from(sleepEntries).orderBy(desc(sleepEntries.wakeTime))
 }
