@@ -4,7 +4,7 @@ Last updated: 2026-10-15
 
 ## Where the next phase starts
 
-**Phase 9 — Deploy** ([PLAN.md](PLAN.md#phase-9--deploy)). It starts with the owner's setup steps: install the Vercel CLI, log in, and decide whether production uses the same Neon database as dev. Type `start phase 9` in a new chat.
+**All planned phases are done.** v1 is live at https://sleepx.vercel.app. Next: the owner's phone checks below, then 30 days of logging against the success measure (product_sense.md §9). New work starts from the PRD §4 feature table and its "considered" rows, with the pain written first.
 
 ## Done
 
@@ -18,13 +18,13 @@ Last updated: 2026-10-15
   - Live total while picking: built (owner asked for it after the mock-ups).
   - Pickers show three rows on a band; the chart is restyled (7h tick in the accent, under-7h dots, no-entry days as gaps, 5h–10h scale).
   - Mock-ups: A, B, C built as interactive HTML, then A v2; A v2 chosen and kept as `docs/design/mockups/dawn-sky.html`, the rest deleted.
-
 - Cleanup (2026-10-15, after Phase 8): removed the five unused Next.js starter images in `public/`, the never-called `getEntryById` query, and the `Card` primitive (one use left, inlined into `EditableEntryCard`, per ARCHITECTURE.md's second-use rule).
+- Phase 9 (2026-10-15): deployed. The Vercel project `sleepx` already existed, connected to this GitHub repo, with `DATABASE_URL` set for production; every push to `master` deploys. The Phase 8 and cleanup pushes deployed as Ready. Checked: `/` and `/history` return 200 and serve Dawn sky with real data ("above 7h" from today's entry), screenshot at 390px. `drizzle.config.ts` message fixed (`.env`, not `.env.local`); README has the live URL.
 
 ## Not done
 
-- Owner phone checks, still open: Phase 7 (edit a real entry, log a new one) and Phase 8 (does Dawn sky feel right on the phone, half-awake, in a dim room; does the sunrise play on a real save).
-- Phase 9: deploy.
+- Owner phone checks on the live URL, still open: edit a real entry, log a new one (does the sunrise play, does the chart update), and does Dawn sky feel right half-awake in a dim room.
+- `.gitignore` has an uncommitted change made by `vercel link` (adds `.vercel` and `.env*`); keep or drop is the owner's call.
 
 ## Decisions
 
@@ -37,13 +37,12 @@ Last updated: 2026-10-15
 
 ## Open questions
 
-- Production database: same Neon DB as dev, or a separate one? Decide before Phase 9.
+- Production database: same Neon DB as dev, or separate? Not verifiable from here (the production value is hidden). Production shows real entries, so it holds the real record either way; check in the Neon console if it matters.
 - Top risk, no mitigation chosen: the whole record lives in one database with no export or backup.
 - Product-level questions (one tracker or many, what the data answers, when to open it up): [product_sense.md §10](product_sense.md#10-open-questions).
 
 ## Known issues
 
-- `drizzle.config.ts` error message says `.env.local`; the project uses `.env`. Fixed in Phase 9.
 - A failed **delete** still goes to the full-page error screen. Acceptable for now: nothing being typed is lost.
 - Clock times are formatted two ways: the dashboard and form say "8 AM", History says "8:00 AM" (`formatClockTime` vs `Intl` in SleepHistoryList). Cosmetic; unify when History is next touched.
 - The sheet has a rise-in animation but closes instantly (it unmounts); on Save the sunrise covers it, on × it's abrupt.

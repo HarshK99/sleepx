@@ -64,6 +64,8 @@ Built 2026-07-19 → 2026-08-03. Kept short as a record; the code and ARCHITECTU
 
 ## Phase 9 — Deploy
 
+**Done 2026-10-15:** the Vercel project `sleepx` already existed, linked to this GitHub repo, with `DATABASE_URL` set for production; every push to `master` deploys. Live at https://sleepx.vercel.app, serving Dawn sky and real data. The plan below is kept as the record; steps it assumed were still needed (import the repo, set the variable, run the migration) had been done earlier.
+
 **Goal:** a working production URL the owner logs from every day.
 
 **Owner does first (needs their accounts):**

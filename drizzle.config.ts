@@ -1,7 +1,7 @@
 import { defineConfig } from 'drizzle-kit'
 
 if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set — add it to .env.local')
+  throw new Error('DATABASE_URL is not set — add it to .env (copy .env.example)')
 }
 
 export default defineConfig({
