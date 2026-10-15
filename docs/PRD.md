@@ -1,10 +1,12 @@
 # SleepX — Product Requirements
 
-## 1. Vision
+The goal, user, pains and success measure live in [product_sense.md](product_sense.md). This doc is the build-level spec: flow, scope, data rules, non-functional requirements.
 
-A sleep tracker that's faster to use than the thought "how much sleep did I get?" Logging a night's sleep should take one screen and one save — no multi-step wizards, no mandatory fields beyond the two that matter.
+## 1. Product principle
 
-## 2. Target user (v1)
+Logging a night's sleep takes one screen and one save — no multi-step wizards, no mandatory fields beyond the two that matter.
+
+## 2. Users in v1
 
 Just the app owner. Single-user, no accounts, no auth. The data model should not need a rewrite to add auth later (see [ARCHITECTURE.md](ARCHITECTURE.md#future-multi-user-path)), but nothing in v1 should be built to accommodate it prematurely.
 
@@ -33,7 +35,7 @@ Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks
 - Dashboard chart: **bed time** per day — the *first* (earliest) bed time logged that day, deliberately excluding a later same-day nap, same 14-day range
 - Dashboard chart: **wake-up time** per day — the *first* (earliest) wake time logged that day, deliberately excluding a later same-day nap ("evening sleep"), same 14-day range
 - Each chart draws a hardcoded goal reference line and a fixed axis scale built around it — **7h** for sleep duration, **11:30 PM** bed time, **7:00 AM** wake time (`lib/sleep/goals.ts`). Not user-configurable yet; revisit if/when goals should be editable.
-- History page: full list of entries, deletable (edit not built yet — `updateEntryAction` exists and is ready to wire up when needed)
+- History page: full list of entries, editable and deletable (delete is built; edit is [PLAN.md](PLAN.md) Phase 7 — `updateEntryAction` already exists)
 - Data persisted in Neon Postgres, deployed on Vercel
 
 **Explicitly out of scope for v1** (captured for later, not rejected):
@@ -41,6 +43,7 @@ Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks
 - Real-time "going to sleep now" / "just woke up" toggle logging
 - Sleep quality rating
 - Reminders/notifications
+- CSV export / bulk delete in History
 - Multi-device sync beyond "it's a normal web app with one shared DB"
 - Native mobile app / PWA install prompts
 - Smarter form defaults when logging a second same-day entry (e.g. detecting "this looks like a nap")
@@ -74,8 +77,8 @@ UI components are intentionally minimal/placeholder in this phase. The user will
 
 ## 8. Open questions / backlog (revisit later)
 
-- Chart range: **decided for v1 — fixed 14 days, no selector** (see §4). Revisit if a longer trend view turns out to matter.
-- Should History support bulk delete / CSV export?
-- If auth is added later: single passcode vs. magic link vs. full OAuth?
+Product-level questions (accounts and sign-in, one tracker or many, what the data answers) are in [product_sense.md](product_sense.md#10-open-questions). Build-level ones:
+
+- Chart range is fixed at 14 days for v1 (see §4). Revisit if a longer trend view turns out to matter.
 - Should History group entries by day (showing the daily total with entries nested under it) once multi-entry days are common, rather than a flat list?
-- **Infinite/looping scroll for the Hour and Minute wheels** (00 continuing after 23, like Apple's pickers): done, via `components/ui/LoopingWheelColumn.tsx` — a purpose-built native-scroll wheel used for just those two columns (Date still uses `react-mobile-picker`; its range is bounded so it doesn't need to loop). See ARCHITECTURE.md's directory map for how it avoids the snap-back glitch `react-mobile-picker` would hit.
+- Resolved: the Hour and Minute wheels loop (00 follows 23), via `components/ui/LoopingWheelColumn.tsx`; the Date wheel's range is bounded, so it stays on `react-mobile-picker` and doesn't loop. ARCHITECTURE.md's directory map has the why.

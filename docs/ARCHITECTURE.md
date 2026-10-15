@@ -28,7 +28,7 @@ This is the modular/no-repetition mandate from the project owner. Concretely:
 
 ```
 app/
-  page.tsx                 # Dashboard: avg-sleep/bed-time/wake-time stats, then the sleep/bed-time/wake-time charts, then the entry form wrapped in SleepEntrySheet. Fetches all three chart datasets server-side in parallel — catches a failed fetch itself so a DB blip degrades one chart, not the whole page (the form must keep working)
+  page.tsx                 # Dashboard: avg-sleep/bed-time/wake-time stats, then the sleep/wake-time/bed-time charts, then the entry form wrapped in SleepEntrySheet. Fetches all three chart datasets server-side in parallel — catches a failed fetch itself so a DB blip degrades one chart, not the whole page (the form must keep working)
   error.tsx                 # Safety-net error boundary for anything else unexpected (e.g. a save that fails mid-flight) — "Try again" calls unstable_retry()
   history/
     page.tsx               # Full entry list + delete. No fetch retry here (unlike the dashboard) — a failed getAllEntries() falls through to error.tsx, which is an acceptable degrade for a secondary page. Edit-in-place isn't built yet (updateEntryAction exists and is ready for it) — only delete, since that's what was actually asked for; extend SleepHistoryList when/if inline edit is needed.
@@ -49,7 +49,7 @@ lib/
 components/
   ui/                        # Generic, reusable, no domain knowledge (Button, Card, Field, IconButton, ...)
     WheelDateTimePicker.tsx   # Date/Hour/Minute scroll-wheel picker ('use client'). Date column wraps react-mobile-picker (bounded, non-looping range); Hour/Minute columns use LoopingWheelColumn instead (they loop, see below). Writes a hidden input matching the same "YYYY-MM-DDTHH:mm" shape lib/sleep/duration.ts already parses — the Server Action contract didn't change.
-    LoopingWheelColumn.tsx     # 'use client' infinite-scroll wheel column (native overflow-scroll + CSS scroll-snap over `options` repeated 5x, silently recentered on the middle copy on every scroll event) — used for Hour/Minute so scrolling past 23 continues into 00 with no dead-end. react-mobile-picker can't do this itself (matches selected item by value, so duplicating its list causes a visible snap-back glitch on release, per the now-resolved PRD.md §8 note) — this component owns scroll position directly instead, sidestepping that. Generic over any `options: string[]`, no sleep-domain knowledge.
+    LoopingWheelColumn.tsx     # 'use client' infinite-scroll wheel column (native overflow-scroll + CSS scroll-snap over `options` repeated 5x, silently recentered on the middle copy on every scroll event) — used for Hour/Minute so scrolling past 23 continues into 00 with no dead-end. react-mobile-picker can't do this itself (matches selected item by value, so duplicating its list causes a visible snap-back glitch on release, see PRD.md §8) — this component owns scroll position directly instead, sidestepping that. Generic over any `options: string[]`, no sleep-domain knowledge.
     IconButton.tsx             # Bare circular icon-button primitive (no default size/color — callers always set their own, see the file's own comment) — used by the sheet's close × and its + FAB
     TrendChart.tsx              # 'use client' — the one Recharts line/area-chart implementation (axes, grid, tooltip, dot styling, CSS-var colors). Generic {date, value}[] in, formatters in as props, no sleep-domain knowledge. SleepChart, BedTimeChart, and WakeTimeChart are all thin adapters over this — see "Three charts, one chart implementation" below
   sleep/
@@ -58,12 +58,15 @@ components/
     CloseSheetOnSave.tsx        # 'use client', renders nothing — rendered inside SleepEntryForm's <form>, watches useFormStatus() for the pending true→false edge and calls setEntrySheetOpen(false). Exists because SleepEntryForm is a Server Component with no client-side success callback of its own; this is the one place that closes the sheet on save
     SleepChart.tsx             # Hours-slept-per-day chart — adapts DailyTotal[] to TrendChart's {date, value} shape, supplies hour/duration formatters. 'use client': it passes formatter *functions* into TrendChart as props, and functions can't cross the Server->Client boundary as props (only pre-rendered JSX via children, or actual Server Actions) — this bit us once already, don't try to make it a Server Component again
     BedTimeChart.tsx            # First-bed-time-of-day chart — adapts FirstBedTime[] to TrendChart, running each value through clockTime.ts's toBedTimeAxisMinutes() first (bed times cluster around midnight, so the raw 0-1439 value would wrap badly on a linear axis — see that file's comment) and formatClockTime() for ticks/tooltip. Fixed -180..180 (9pm-3am) domain/ticks and a goals.ts-driven goal line — see "Three charts" below. Also 'use client', same function-prop reason as the other two.
-    WakeTimeChart.tsx           # First-wake-time-of-day chart — adapts FirstWakeTime[] to TrendChart, supplies clockTime.ts's formatClockTime. Fixed 360..660 (6am-11am) domain/ticks and a goals.ts-driven goal line — see "Three charts" below. Also 'use client', same reason.
+    WakeTimeChart.tsx           # First-wake-time-of-day chart — adapts FirstWakeTime[] to TrendChart, supplies clockTime.ts's formatClockTime. Fixed 360..600 (6am-10am) domain/ticks and a goals.ts-driven goal line — see "Three charts" below. Also 'use client', same reason.
     SleepHistoryList.tsx        # Server Component, full entry list with a per-row delete (<form action={deleteEntryAction}>). Not edit — see the history/page.tsx note above.
 
 docs/
-  PRD.md
-  ARCHITECTURE.md
+  product_sense.md         # Why: goal, user, pains, success measure
+  PRD.md                   # What: flow, scope, data rules
+  ARCHITECTURE.md          # How the code is organized (this file)
+  PLAN.md                  # Build order, one phase per chat
+  STATUS.md                # Where the build is now; read first in a new chat
 ```
 
 Rule of thumb: **pages compose components, components render, `lib/sleep` decides, `lib/db` persists.** No layer skips another.
@@ -112,7 +115,7 @@ The dashboard's four stat tiles (`StatCard` in `app/page.tsx`, laid out as a 2×
 
 The Neon HTTP driver (`@neondatabase/serverless`) opens a fresh request per query rather than holding a connection open, and Neon's compute auto-suspends when idle — so an occasional `NeonDbError`/`TypeError: fetch failed` (cold-start or a network blip) is expected, confirmed in practice (not just theoretically) during this project's own dev testing. Three layers handle it, all in `app/page.tsx`, none in `queries.ts` (which stays a faithful, unopinionated DB access layer — retries and fallbacks are a page/presentation-layer decision):
 - `safeLoad()` retries a failed fetch **once**, after a fixed ~750ms delay, before giving up — cheap insurance against exactly the cold-start case (first query after idle wakes the compute, which can take a couple seconds; a bare failure without retrying would surface as broken even when the DB was simply slow to wake up). The delay only ever happens on the failure path, never on a normal load.
-- If the retry also fails, `safeLoad()` returns `null` and the page renders an inline "couldn't load chart" message in that chart's `Card` instead of throwing — the entry sheet/form below keeps working regardless (and the *other* chart, if only one fetch failed), since a read failure must never block logging an entry. One `safeLoad` helper, reused for both charts — not duplicated per chart.
+- If the retry also fails, `safeLoad()` returns `null` and the page renders an inline "couldn't load chart" message in that chart's `Card` instead of throwing — the entry sheet/form below keeps working regardless (and the *other* chart, if only one fetch failed), since a read failure must never block logging an entry. One `safeLoad` helper, reused for all three charts — not duplicated per chart.
 - `app/error.tsx` is the fallback for anything else unexpected (including a Server Action failing on save) — without it, an uncaught error blanks the entire page instead of showing a "Try again" screen.
 
 ## Environment variables

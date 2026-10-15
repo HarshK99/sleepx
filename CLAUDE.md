@@ -5,9 +5,11 @@
 A minimal-clicks sleep tracker. Next.js (App Router) + Neon Postgres (Drizzle) + Vercel.
 
 Before doing any non-trivial work, read:
+- [docs/STATUS.md](docs/STATUS.md) — where the build is now and which phase is next
+- [docs/product_sense.md](docs/product_sense.md) — goal, user, pains, success measure
 - [docs/PRD.md](docs/PRD.md) — what the product is, MVP scope, what's explicitly out of scope
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — directory map, data model, and the module boundaries that keep this codebase from growing duplicate logic
-- [docs/PLAN.md](docs/PLAN.md) — the phase-wise build order; work through it in sequence rather than jumping to UI polish before the data layer exists
+- [docs/PLAN.md](docs/PLAN.md) — the phase-wise build order; one phase per chat, started with `start phase N`
 
 ## Non-negotiables
 
