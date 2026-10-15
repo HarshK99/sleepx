@@ -77,12 +77,24 @@ export function formatForTimeInput(date: Date): string {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`
 }
 
+function minutesBetween(bedTime: Date, wakeTime: Date): number {
+  return Math.round((wakeTime.getTime() - bedTime.getTime()) / MINUTE_MS)
+}
+
+/**
+ * The one validity rule for an entry: wake time strictly after bed time.
+ * The Server Actions check this first so the form can show a message;
+ * computeDurationMinutes still enforces it as a last line of defense.
+ */
+export function isWakeAfterBed(bedTime: Date, wakeTime: Date): boolean {
+  return minutesBetween(bedTime, wakeTime) > 0
+}
+
 export function computeDurationMinutes(bedTime: Date, wakeTime: Date): number {
-  const minutes = Math.round((wakeTime.getTime() - bedTime.getTime()) / MINUTE_MS)
-  if (minutes <= 0) {
+  if (!isWakeAfterBed(bedTime, wakeTime)) {
     throw new Error('wakeTime must be after bedTime')
   }
-  return minutes
+  return minutesBetween(bedTime, wakeTime)
 }
 
 export function formatDuration(minutes: number): string {

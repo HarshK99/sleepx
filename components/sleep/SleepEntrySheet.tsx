@@ -35,7 +35,7 @@ function getServerSnapshot(): boolean {
   return true
 }
 
-/** Exported so a component nested inside the form (CloseSheetOnSave) can close the sheet without needing Context. */
+/** Exported so NewEntryForm can close the sheet after a successful save without needing Context. */
 export function setEntrySheetOpen(open: boolean) {
   sessionStorage.setItem(SESSION_KEY, open ? 'open' : 'closed')
   listeners.forEach((listener) => listener())

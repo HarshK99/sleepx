@@ -14,7 +14,7 @@ Just the app owner. Single-user, no accounts, no auth. The data model should not
 
 1. Open the app (on a phone, most of the time). Land on the dashboard: the trend chart is at the top.
 2. The quick-entry form is **open by default, as a bottom sheet, with zero clicks** — **bed time**, **wake time**, and an **optional note**, pre-filled with sensible defaults (bed time = yesterday 11:00 PM, wake time = today 7:00 AM — both fixed clock times in APP_TIMEZONE, not "now"), editable via scroll-wheel pickers (see §6). The first time you land in a new session, nothing needs to be tapped to reach it.
-3. Tap **Save**. One submit, no confirmation step. The sheet **closes automatically on a successful save**, back to the chart — logging a second same-day entry (e.g. a nap) means reopening it via the + FAB, same as after an explicit close.
+3. Tap **Save**. One submit, no confirmation step. The sheet **closes automatically on a successful save**; a failed save (wake before bed, or a connection hiccup) keeps it open with a message and the entry still filled in, back to the chart — logging a second same-day entry (e.g. a nap) means reopening it via the + FAB, same as after an explicit close.
 4. Dashboard updates in place: the new entry is reflected in the chart immediately.
 5. The sheet can be dismissed (× or tapping the backdrop) to see the full chart unobstructed, and reopened any time via a **+** button. That closed/open choice is remembered only for the current session (`sessionStorage`) — the **next new session opens it again automatically**, so the zero-click default always comes back.
 6. The form is always available for a new entry (once the sheet's open) — there is no "one entry per day" restriction. An evening nap is logged the same way as a night's sleep: bed time and wake time for that nap. Both entries count toward the same day's total (see §5).
@@ -35,7 +35,7 @@ Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks
 - Dashboard chart: **bed time** per day — the *first* (earliest) bed time logged that day, deliberately excluding a later same-day nap, same 14-day range
 - Dashboard chart: **wake-up time** per day — the *first* (earliest) wake time logged that day, deliberately excluding a later same-day nap ("evening sleep"), same 14-day range
 - Each chart draws a hardcoded goal reference line and a fixed axis scale built around it — **7h** for sleep duration, **11:30 PM** bed time, **7:00 AM** wake time (`lib/sleep/goals.ts`). Not user-configurable yet; revisit if/when goals should be editable.
-- History page: full list of entries, editable and deletable (delete is built; edit is [PLAN.md](PLAN.md) Phase 7 — `updateEntryAction` already exists)
+- History page: full list of entries, editable in place and deletable. Editing uses the same form as logging; its Date column covers the entry's own date ±7 days (never past today), so entries older than the 14-day logging window can still be fixed
 - Data persisted in Neon Postgres, deployed on Vercel
 
 **Explicitly out of scope for v1** (captured for later, not rejected):

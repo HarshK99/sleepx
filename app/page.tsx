@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { BedTimeChart } from '@/components/sleep/BedTimeChart'
 import { Card } from '@/components/ui/Card'
 import { SleepChart } from '@/components/sleep/SleepChart'
-import { SleepEntryForm } from '@/components/sleep/SleepEntryForm'
+import { NewEntryForm } from '@/components/sleep/NewEntryForm'
 import { SleepEntrySheet } from '@/components/sleep/SleepEntrySheet'
 import { WakeTimeChart } from '@/components/sleep/WakeTimeChart'
 import { formatClockTime, toBedTimeAxisMinutes } from '@/lib/sleep/clockTime'
@@ -197,7 +197,7 @@ export default async function DashboardPage() {
         {firstBedTimes ? <BedTimeChart firstBedTimes={firstBedTimes} /> : <ChartError />}
       </ChartCard>
       <SleepEntrySheet>
-        <SleepEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />
+        <NewEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />
       </SleepEntrySheet>
     </main>
   )

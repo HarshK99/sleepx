@@ -3,11 +3,14 @@
 import { useMemo, useState } from 'react'
 import Picker from 'react-mobile-picker'
 
-import { APP_TIMEZONE, MINUTE_STEP, daysBefore, getWakeDate } from '@/lib/sleep/duration'
+import { APP_TIMEZONE, MINUTE_STEP, daysBefore, getWakeDate, parseWallClockDateTime } from '@/lib/sleep/duration'
 
 import { LoopingWheelColumn } from './LoopingWheelColumn'
 
 const DATE_RANGE_DAYS_BACK = 14
+const AROUND_VALUE_DAYS = 7
+
+type DateWindow = 'recent' | 'aroundValue'
 
 /**
  * Height === itemHeight on purpose: the visible window is exactly one row,
@@ -43,17 +46,38 @@ const dateLabelFormatter = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
 })
 
-function buildDateOptions(): { value: string; label: string }[] {
-  const now = new Date()
-  const options: { value: string; label: string }[] = []
+type DateOption = { value: string; label: string }
 
-  for (let daysAgo = DATE_RANGE_DAYS_BACK; daysAgo >= 0; daysAgo--) {
-    const d = daysBefore(now, daysAgo)
-    const label = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : dateLabelFormatter.format(d)
-    options.push({ value: getWakeDate(d), label })
+function toDateOption(day: Date, now: Date): DateOption {
+  const value = getWakeDate(day)
+  const label =
+    value === getWakeDate(now)
+      ? 'Today'
+      : value === getWakeDate(daysBefore(now, 1))
+        ? 'Yesterday'
+        : dateLabelFormatter.format(day)
+  return { value, label }
+}
+
+/**
+ * 'recent': today back DATE_RANGE_DAYS_BACK days — the new-entry form's
+ * backfill window (PRD §6). 'aroundValue': the value's own date
+ * ±AROUND_VALUE_DAYS, never past today — used when editing, so an entry
+ * older than the recent window is still on the wheel and can be moved a
+ * few days either way.
+ */
+function buildDateOptions(dateWindow: DateWindow, valueDate: string): DateOption[] {
+  const now = new Date()
+
+  if (dateWindow === 'recent') {
+    return Array.from({ length: DATE_RANGE_DAYS_BACK + 1 }, (_, i) => toDateOption(daysBefore(now, DATE_RANGE_DAYS_BACK - i), now))
   }
 
-  return options
+  const today = getWakeDate(now)
+  const center = parseWallClockDateTime(`${valueDate}T12:00`)
+  return Array.from({ length: AROUND_VALUE_DAYS * 2 + 1 }, (_, i) => daysBefore(center, AROUND_VALUE_DAYS - i))
+    .filter((day) => getWakeDate(day) <= today)
+    .map((day) => toDateOption(day, now))
 }
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
@@ -70,11 +94,12 @@ type WheelDateTimePickerProps = {
   name: string
   label: string
   defaultValue: string
+  dateWindow?: DateWindow
 }
 
-export function WheelDateTimePicker({ name, label, defaultValue }: WheelDateTimePickerProps) {
-  const dateOptions = useMemo(() => buildDateOptions(), [])
+export function WheelDateTimePicker({ name, label, defaultValue, dateWindow = 'recent' }: WheelDateTimePickerProps) {
   const initial = useMemo(() => splitValue(defaultValue), [defaultValue])
+  const dateOptions = useMemo(() => buildDateOptions(dateWindow, initial.date), [dateWindow, initial.date])
   const [date, setDate] = useState(initial.date)
   const [hour, setHour] = useState(initial.hour)
   const [minute, setMinute] = useState(initial.minute)

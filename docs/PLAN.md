@@ -26,7 +26,7 @@ Built 2026-07-19 → 2026-08-03. Kept short as a record; the code and ARCHITECTU
 
 **Instructions:**
 1. Add edit to each History row, reusing `WheelDateTimePicker` and `updateEntryAction`. Don't build a second picker or a second form layout. Edit and create are the same fields, so share them.
-2. **Decide before building:** the picker's Date column only covers today back 14 days, but History holds older entries too. Ask the owner how to edit an entry older than that (for example: widen the range to include the entry's own date, or only allow editing the time). One question, with options.
+2. **Decided 2026-10-15:** when editing, the Date column covers the entry's own date ±7 days, never past today, so entries older than the 14-day logging window stay editable.
 3. Fix `CloseSheetOnSave`: today it closes the sheet when the save *finishes*, success or not. It should close only on success (PRD §3). Check how a Server Action reports failure in this Next.js version in `node_modules/next/dist/docs/` before choosing the approach.
 4. Wake time before bed time currently throws and shows the full-page error. If the edit flow makes this more likely, show the error inside the form instead; otherwise leave it and note it in STATUS.md.
 
