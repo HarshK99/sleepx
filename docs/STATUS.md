@@ -8,7 +8,8 @@ Last updated: 2026-10-15
 
 ## Done
 
-- Phases 0–6 (2026-07-19 → 2026-08-03): data layer, domain logic, Server Actions, UI primitives, bottom-sheet entry form, three charts and four stat tiles.
+- Phases 0–6 (2026-07-19 → 2026-08-03): data layer, domain logic, Server Actions, UI primitives, bottom-sheet entry form, charts and four stat tiles.
+- Feature check (2026-10-15, after Phase 7): PRD §4 is now a feature table, each row traced to product_sense.md. Removed the bed-time and wake-time charts and their 11:30 PM / 7 AM goal lines: they served "what to change", not the chosen decision, and encoded goals the owner doesn't have. Data untouched; avg bed/wake tiles kept. Kept the optional note (it makes the record honest, adds no click).
 - Build OS check and product-sense pass (2026-10-15): [product_sense.md](product_sense.md); PLAN.md in phase format; PRD and ARCHITECTURE in line with the code.
 - Phase 7 (2026-10-15), code side:
   - Edit in History: Edit (1 tap) swaps the row for the shared entry form; Save is the 2nd tap.
@@ -43,6 +44,10 @@ Last updated: 2026-10-15
 ## Files changed in Phase 7
 
 `app/actions/sleep-entries.ts`, `lib/sleep/duration.ts` (`isWakeAfterBed`), `components/ui/WheelDateTimePicker.tsx` (`dateWindow`), `components/sleep/SleepEntryForm.tsx` (now client, create + edit), `components/sleep/NewEntryForm.tsx` (new), `components/sleep/EditableEntryCard.tsx` (new), `components/sleep/SleepHistoryList.tsx`, `components/sleep/SleepEntrySheet.tsx` (comment), `app/page.tsx`, `components/sleep/CloseSheetOnSave.tsx` (deleted), `docs/ARCHITECTURE.md`, `docs/PRD.md`, `docs/PLAN.md`, `docs/STATUS.md`.
+
+## Files changed in the feature check
+
+`app/page.tsx`, `components/sleep/BedTimeChart.tsx` and `components/sleep/WakeTimeChart.tsx` (deleted), `components/ui/TrendChart.tsx` (dropped the `yAxisWidth` prop only those charts used), `lib/sleep/goals.ts`, `lib/sleep/clockTime.ts` (dropped `formatClockTimeCompact`), `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/PLAN.md`, `docs/STATUS.md`. Feature check: type-check and lint clean; dashboard screenshot at 390px (motion off) shows four tiles and the one sleep chart with its 7h line.
 
 ## Checks
 

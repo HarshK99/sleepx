@@ -12,9 +12,9 @@ Just the app owner. Single-user, no accounts, no auth. The data model should not
 
 ## 3. Core user flow
 
-1. Open the app (on a phone, most of the time). Land on the dashboard: the trend chart is at the top.
+1. Open the app (on a phone, most of the time). Land on the dashboard: the stat tiles and the sleep chart are at the top.
 2. The quick-entry form is **open by default, as a bottom sheet, with zero clicks** — **bed time**, **wake time**, and an **optional note**, pre-filled with sensible defaults (bed time = yesterday 11:00 PM, wake time = today 7:00 AM — both fixed clock times in APP_TIMEZONE, not "now"), editable via scroll-wheel pickers (see §6). The first time you land in a new session, nothing needs to be tapped to reach it.
-3. Tap **Save**. One submit, no confirmation step. The sheet **closes automatically on a successful save**; a failed save (wake before bed, or a connection hiccup) keeps it open with a message and the entry still filled in, back to the chart — logging a second same-day entry (e.g. a nap) means reopening it via the + FAB, same as after an explicit close.
+3. Tap **Save**. One submit, no confirmation step. The sheet **closes automatically on a successful save**, back to the chart; a failed save (wake before bed, or a connection hiccup) keeps it open with a message and the entry still filled in. Logging a second same-day entry (e.g. a nap) means reopening it via the + FAB, same as after an explicit close.
 4. Dashboard updates in place: the new entry is reflected in the chart immediately.
 5. The sheet can be dismissed (× or tapping the backdrop) to see the full chart unobstructed, and reopened any time via a **+** button. That closed/open choice is remembered only for the current session (`sessionStorage`) — the **next new session opens it again automatically**, so the zero-click default always comes back.
 6. The form is always available for a new entry (once the sheet's open) — there is no "one entry per day" restriction. An evening nap is logged the same way as a night's sleep: bed time and wake time for that nap. Both entries count toward the same day's total (see §5).
@@ -24,21 +24,27 @@ Editing a mistake (wrong time, duplicate entry) must be reachable in ≤2 clicks
 
 **On the bottom-sheet decision:** this replaces an earlier stricter rule ("never gate the form behind a FAB/modal/bottom sheet") with a narrower one — zero clicks *the first time each session*, at the cost of one click (the + FAB) to log a second entry after closing it. That's a deliberate, explicit trade the project owner chose over the stricter always-inline version; it is not an oversight and shouldn't be "fixed" back without checking here first.
 
-## 4. MVP scope
+## 4. Features
 
-**In scope:**
-- Quick-entry form (bed time + wake time → duration is derived, never entered manually)
-- Optional free-text note per entry (e.g. "woke up twice", "afternoon nap")
-- Multiple entries per day (e.g. a night's sleep + a nap) — each logged independently, both count toward that day's total
-- Dashboard stats: **today's sleep so far**, **average hours slept**, **average bed time**, and **average wake time** — the latter three over the same fixed 14-day range as the charts, averaged only across days that actually have a logged entry (zero-filled/no-entry gap days are excluded so a sparse history isn't dragged toward zero) and, for bed/wake time, only the *main* sleep — a same-day nap never counts toward either average. Today's figure shows "—" rather than 0 before anything's been logged yet today.
-- Dashboard chart: **total** hours slept per day (sum of all that day's entries), fixed to the most recent 14 days (matches the picker's backfill window; no range selector in v1 — see §8)
-- Dashboard chart: **bed time** per day — the *first* (earliest) bed time logged that day, deliberately excluding a later same-day nap, same 14-day range
-- Dashboard chart: **wake-up time** per day — the *first* (earliest) wake time logged that day, deliberately excluding a later same-day nap ("evening sleep"), same 14-day range
-- Each chart draws a hardcoded goal reference line and a fixed axis scale built around it — **7h** for sleep duration, **11:30 PM** bed time, **7:00 AM** wake time (`lib/sleep/goals.ts`). Not user-configurable yet; revisit if/when goals should be editable.
-- History page: full list of entries, editable in place and deletable. Editing uses the same form as logging; its Date column covers the entry's own date ±7 days (never past today), so entries older than the 14-day logging window can still be fixed
-- Data persisted in Neon Postgres, deployed on Vercel
+Every feature traces to [product_sense.md](product_sense.md): the **goal** (a complete, honest record), the **decision** ("Am I sleeping enough, or do I need to change something?"), or a **pain** (§4 there). A feature that traces to none of them is a candidate to remove. Check this table after any product-sense change and whenever a feature is added. Data is stored in Neon Postgres and deployed on Vercel; that's infrastructure, not a feature.
 
-**Explicitly out of scope for v1** (captured for later, not rejected):
+| Feature | What it lets the user do | Serves | Status |
+|---|---|---|---|
+| Entry sheet, open by default | Log a night with zero taps to reach the form, the first time each session; + button reopens it; closes on a successful save, stays open with a message on a failed one (§3) | Goal: same-morning logging | Built |
+| Default times | Start from bed 11 PM yesterday, wake 7 AM today (fixed clock times in APP_TIMEZONE), so most nights need little change | Goal | Built |
+| Scroll-wheel time pickers | Pick date / hour / minute one-thumbed, in 15-minute steps; hour and minute wheels loop (§6) | Goal | Built |
+| 14-day backfill | Log a missed night up to 14 days back | Pain: "guessed later" | Built |
+| Several entries per day | Log a nap separately; it counts toward that day's total (§5) | Goal, decision | Built |
+| Optional note | Add context like "woke up twice" that makes a night's numbers honest | Goal: honest record | Built |
+| Today's sleep tile | See today's total so far ("—" before anything's logged) | Decision | Built |
+| Avg sleep tile | See average hours over 14 days, counting only days with an entry | Decision | Built |
+| Avg bed / wake time tiles | See the typical main-sleep bed and wake time over 14 days (naps excluded) | Decision: "change something" half | Built |
+| Sleep chart | See total hours per day for the last 14 days against a fixed 7h line (`lib/sleep/goals.ts`, not user-configurable) | Decision | Built |
+| History: edit | Fix a wrong entry in ≤2 taps; the date wheel covers the entry's own date ±7 days, so old entries can be fixed | Goal: honest record | Built |
+| History: delete | Remove a duplicate or mistaken entry | Goal: honest record | Built |
+| Bed-time and wake-time charts | Per-day bed and wake time against 11:30 PM / 7 AM goal lines | "What to change", not the chosen decision; goals the owner doesn't have | Removed 2026-10-15 |
+
+**Out of scope for v1** (captured for later, not rejected):
 - User accounts / authentication
 - Real-time "going to sleep now" / "just woke up" toggle logging
 - Sleep quality rating

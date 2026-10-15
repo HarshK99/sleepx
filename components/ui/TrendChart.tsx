@@ -75,21 +75,22 @@ type TrendChartProps = {
   tooltipValueFormatter: (value: number) => string
   /** Recharts domain, e.g. undefined for the default 0-based scale, or ['dataMin - 30', 'dataMax + 30'] to auto-frame around the actual range instead of zero. */
   yDomain?: YAxisProps['domain']
-  /** Explicit tick values so the axis shows clean, consistent round numbers instead of whatever Recharts auto-generates from the data range (e.g. "13.3h" — see SleepChart/BedTimeChart/WakeTimeChart for the fixed scales this enables). */
+  /** Explicit tick values so the axis shows clean, consistent round numbers instead of whatever Recharts auto-generates from the data range (e.g. "13.3h" — see SleepChart for the fixed scale this enables). */
   yTicks?: number[]
   /** Draws a dashed horizontal goal line (e.g. a 7h sleep goal) at this value, with `goalLabel` alongside it. Omit both for a chart with no goal. */
   goalValue?: number
   goalLabel?: string
-  /** Column width reserved for Y-axis tick labels. Default (36) fits SleepChart's short "7h"/"14h" labels; BedTimeChart/WakeTimeChart pass a wider value for "10AM"/"11AM", which would otherwise get word-wrapped onto two lines. */
-  yAxisWidth?: number
 }
+
+/** Column width reserved for Y-axis tick labels — fits SleepChart's short "7h"/"14h" labels. */
+const Y_AXIS_WIDTH = 36
 
 /**
  * The one place a "value per day, last N days" line/area chart is built —
- * SleepChart, BedTimeChart, and WakeTimeChart are all thin adapters over
- * this: they map their own query result shape to {date, value} and supply
- * formatters (and, optionally, a fixed tick scale + goal line), the actual
- * Recharts wiring/styling lives here exactly once.
+ * SleepChart is a thin adapter over this: it maps its query result to
+ * {date, value} and supplies formatters, a fixed tick scale and a goal
+ * line; the actual Recharts wiring/styling lives here. Generic on purpose,
+ * so a future chart reuses it rather than growing a second implementation.
  */
 export function TrendChart({
   data,
@@ -99,7 +100,6 @@ export function TrendChart({
   yTicks,
   goalValue,
   goalLabel,
-  yAxisWidth = 36,
 }: TrendChartProps) {
   const lastDateKey = data.at(-1)?.date
 
@@ -121,7 +121,7 @@ export function TrendChart({
             domain={yDomain}
             ticks={yTicks}
             allowDecimals={false}
-            width={yAxisWidth}
+            width={Y_AXIS_WIDTH}
             tick={{ fontSize: 11, fill: 'var(--chart-ink-muted)' }}
             axisLine={false}
             tickLine={false}

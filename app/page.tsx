@@ -1,12 +1,10 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { BedTimeChart } from '@/components/sleep/BedTimeChart'
 import { Card } from '@/components/ui/Card'
 import { SleepChart } from '@/components/sleep/SleepChart'
 import { NewEntryForm } from '@/components/sleep/NewEntryForm'
 import { SleepEntrySheet } from '@/components/sleep/SleepEntrySheet'
-import { WakeTimeChart } from '@/components/sleep/WakeTimeChart'
 import { formatClockTime, toBedTimeAxisMinutes } from '@/lib/sleep/clockTime'
 import { HOUR_MS, daysBefore, formatDuration, formatForTimeInput } from '@/lib/sleep/duration'
 import { getDailyTotals, getFirstBedTimes, getFirstWakeTimes } from '@/lib/sleep/queries'
@@ -189,12 +187,6 @@ export default async function DashboardPage() {
       </div>
       <ChartCard title={`Last ${CHART_RANGE_DAYS} days`}>
         {dailyTotals ? <SleepChart dailyTotals={dailyTotals} /> : <ChartError />}
-      </ChartCard>
-      <ChartCard title="Wake-up time">
-        {firstWakeTimes ? <WakeTimeChart firstWakeTimes={firstWakeTimes} /> : <ChartError />}
-      </ChartCard>
-      <ChartCard title="Bed time">
-        {firstBedTimes ? <BedTimeChart firstBedTimes={firstBedTimes} /> : <ChartError />}
       </ChartCard>
       <SleepEntrySheet>
         <NewEntryForm defaultBedTime={defaults.bedTime} defaultWakeTime={defaults.wakeTime} />
