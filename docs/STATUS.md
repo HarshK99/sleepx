@@ -19,6 +19,7 @@ Last updated: 2026-10-15
   - Pickers show three rows on a band; the chart is restyled (7h tick in the accent, under-7h dots, no-entry days as gaps, 5h–10h scale).
   - Mock-ups: A, B, C built as interactive HTML, then A v2; A v2 chosen and kept as `docs/design/mockups/dawn-sky.html`, the rest deleted.
 - Cleanup (2026-10-15, after Phase 8): removed the five unused Next.js starter images in `public/`, the never-called `getEntryById` query, and the `Card` primitive (one use left, inlined into `EditableEntryCard`, per ARCHITECTURE.md's second-use rule).
+- Refinement after first use (2026-10-15): the wheel's neighbour rows are dimmed (new `wheel-neighbour` token), and History rows are compact with a small Edit; Delete moved inside edit. See design.md §5.
 - Phase 9 (2026-10-15): deployed. The Vercel project `sleepx` already existed, connected to this GitHub repo, with `DATABASE_URL` set for production; every push to `master` deploys. The Phase 8 and cleanup pushes deployed as Ready. Checked: `/` and `/history` return 200 and serve Dawn sky with real data ("above 7h" from today's entry), screenshot at 390px. `drizzle.config.ts` message fixed (`.env`, not `.env.local`); README has the live URL.
 
 ## Not done

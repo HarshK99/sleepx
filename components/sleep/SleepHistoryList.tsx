@@ -35,16 +35,14 @@ export function SleepHistoryList({ entries }: SleepHistoryListProps) {
             wakeTime={formatForTimeInput(entry.wakeTime)}
             note={entry.note}
           >
-            <div className="flex flex-col gap-0.5">
-              <span className="label">{dateFormatter.format(entry.wakeTime)}</span>
-              <span className="mt-1 font-serif text-[26px] font-light leading-tight tracking-[-0.02em] tabular-nums">
-                {formatDuration(entry.durationMinutes)}
-              </span>
-              <span className="text-sm text-ink-2 tabular-nums">
-                {timeFormatter.format(entry.bedTime)} → {timeFormatter.format(entry.wakeTime)}
-              </span>
-              {entry.note && <span className="mt-1 text-sm text-ink-3">{entry.note}</span>}
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[15px] font-medium">{dateFormatter.format(entry.wakeTime)}</span>
+              <span className="font-serif text-xl tracking-[-0.01em] tabular-nums">{formatDuration(entry.durationMinutes)}</span>
             </div>
+            <p className="mt-0.5 truncate text-[13px] text-ink-3 tabular-nums">
+              {timeFormatter.format(entry.bedTime)} → {timeFormatter.format(entry.wakeTime)}
+              {entry.note && <> · {entry.note}</>}
+            </p>
           </EditableEntryCard>
         </li>
       ))}

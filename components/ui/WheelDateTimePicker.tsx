@@ -21,7 +21,7 @@ const ITEM_HEIGHT = 44
 const VISIBLE_ROWS = 3
 
 /** Fades the rows above and below the band; replaces react-mobile-picker's own stronger mask. */
-const WHEEL_MASK = 'linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28))'
+const WHEEL_MASK = 'linear-gradient(rgba(0,0,0,.35), #000 33%, #000 67%, rgba(0,0,0,.35))'
 
 type WheelValue = {
   date: string
@@ -86,7 +86,7 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => String(hour).padSta
 const MINUTE_OPTIONS = Array.from({ length: 60 / MINUTE_STEP }, (_, i) => String(i * MINUTE_STEP).padStart(2, '0'))
 
 function itemLabelClassName(selected: boolean): string {
-  return selected ? 'font-semibold text-ink' : 'text-ink-3'
+  return selected ? 'font-semibold text-ink' : 'text-sm text-wheel-neighbour'
 }
 
 type WheelDateTimePickerProps = {

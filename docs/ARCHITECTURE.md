@@ -61,7 +61,7 @@ components/
     SleepEntrySheet.tsx        # 'use client' bottom sheet wrapping NewEntryForm (passed in as `children` from the page) — open/closed state via useSyncExternalStore + sessionStorage (see the file's own comment for why not useState+useEffect), locks background scroll while open (see the file's own comment — otherwise dragging a wheel column lets touch gestures bounce the page behind it)
     SleepChart.tsx             # Hours-slept-per-day chart — adapts DailyTotal[] to TrendChart's {date, value} shape (a no-entry day becomes null, a gap — not 0), supplies hour/duration formatters and the 5h-10h scale. 'use client': it passes formatter *functions* into TrendChart as props, and functions can't cross the Server->Client boundary as props (only pre-rendered JSX via children, or actual Server Actions) — this bit us once already, don't try to make it a Server Component again
     SleepHistoryList.tsx        # Server Component, full entry list — formats each row's summary and passes it as children to EditableEntryCard, along with the entry's times pre-formatted by formatForTimeInput
-    EditableEntryCard.tsx       # 'use client' — one History row: summary + Edit/Delete, or SleepEntryForm in edit mode in its place (Edit = 1 tap, Save = 2nd, within PRD §3's ≤2-click budget). Collapses only on a successful save
+    EditableEntryCard.tsx       # 'use client' — one History row: compact summary + a small text Edit (Button `quiet`, 44px tap area), or SleepEntryForm in edit mode in its place (Edit = 1 tap, Save = 2nd, within PRD §3's ≤2-click budget) with a quiet "Delete this entry" below it in its own form. Collapses only on a successful save
 
 docs/
   product_sense.md         # Why: goal, user, pains, success measure

@@ -41,7 +41,7 @@ Every feature traces to [product_sense.md](product_sense.md): the **goal** (a co
 | 14-day averages | One line: average hours slept (days with an entry only), and the typical main-sleep bed and wake time (naps excluded) | Decision, incl. its "change something" half | Built (three tiles until Phase 8) |
 | Sleep chart | See total hours per day for the last 14 days against the 7h horizon (`lib/sleep/goals.ts`, not user-configurable); nights under 7h marked, days with no entry left as gaps | Decision | Built |
 | History: edit | Fix a wrong entry in ≤2 taps; the date wheel covers the entry's own date ±7 days, so old entries can be fixed | Goal: honest record | Built |
-| History: delete | Remove a duplicate or mistaken entry | Goal: honest record | Built |
+| History: delete | Remove a duplicate or mistaken entry: Edit → Delete (2 taps), so a stray tap on the list can't remove a night | Goal: honest record | Built (moved inside edit 2026-10-15) |
 | Bed-time and wake-time charts | Per-day bed and wake time against 11:30 PM / 7 AM goal lines | "What to change", not the chosen decision; goals the owner doesn't have | Removed 2026-10-15 |
 | Record-completeness tile | See "28 of 30 nights logged" (product_sense.md §9's success measure) | Goal: complete record | Considered — build if the owner wants to watch the success measure without a DB query (record trust isn't a pain today) |
 | Missed-night marker | See on the dashboard that last night has no entry, while memory is fresh | Pain: "guessed later" | Considered — build if that pain's trigger fires (weekly, or guesses past 30 min) |

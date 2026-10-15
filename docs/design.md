@@ -44,6 +44,7 @@ All in [app/globals.css](../app/globals.css), used through Tailwind names (`text
 | Accent | `apricot`, `apricot-deep` | `#f0a274` for Save, `#c66a3c` for "above/under 7h", the 7h tick, under-7h chart dots |
 | Sun | `--sun-core`, `--sun-glow` | `#fff4e4` / `#ffc996`, radial |
 | Surfaces | `mist`, `mist-strong`, `mist-inset`, `band` | frosted sheet (66%), tooltip / History edit card (86%), control fill (ink 7%), picker selection band (white 72%) |
+| Wheel | `wheel-neighbour` | ink at 20%, one size smaller: the rows above and below the selection, so the sheet doesn't read as a wall of numbers (refined 2026-10-15 after the owner's first use) |
 | Alarm | `alarm` | `#a8413a`: errors, Delete text |
 | Type | `font-serif` = Fraunces (opsz), `font-sans` = Figtree | serif for numbers and titles (light, tight tracking), sans for labels and controls; `.label` = 11px / 600 / 0.12em / uppercase / ink-3 |
 | Motion | `--ease-out` = `cubic-bezier(0.23, 1, 0.32, 1)` | sheet rise 440ms, sun 1100ms (hero) / 420ms (live), sky light 700ms, sunrise 1000ms; press = scale 0.97; all cut under `prefers-reduced-motion` |
@@ -55,9 +56,11 @@ All in [app/globals.css](../app/globals.css), used through Tailwind names (`text
 |---|---|---|---|
 | Dashboard | See whether today's sleep is enough, and the 14-day trend | + (reopen the sheet) | **Not logged yet** (sun below the horizon, "The sun's still below the horizon.", pre-dawn sky) ✓ · **Logged** (sun up, morning sky) ✓ · **Load failed** (per section, "Couldn't load … try refreshing") ✓ |
 | Entry sheet | Log a night in seconds | Save | **Default** (11 PM → 7 AM) ✓ · **Live** (total, sun and sky follow the wheels) ✓ · **Wake before bed** (caption says so, no total; Save returns the in-form error) ✓ · **Saving…** (button) ✓ · **Save failed** (message, entry kept) ✓ · **Saved** (sunrise, sheet closes) ✓ |
-| History | Fix or remove a past entry | Edit | **List** ✓ · **Empty** ("No nights logged yet.") ✓ · **Load failed** → error page ✓ |
-| History edit | Correct an entry | Save | Same as the entry sheet, in a mist card, plus Cancel ✓ |
+| History | Fix or remove a past entry | Edit | **List**: compact rows (date + duration on one line, times · note below, a small text Edit with a full 44px tap area) ✓ · **Empty** ("No nights logged yet.") ✓ · **Load failed** → error page ✓ |
+| History edit | Correct or delete an entry | Save | Same as the entry sheet, in a mist card, plus Cancel and a quiet "Delete this entry" (Delete lives here, not on the row: Edit → Delete) ✓ |
 | Error page | Recover from anything unexpected | Try again | ✓ |
+
+**Refined 2026-10-15, after the owner used it:** the wheel's neighbour rows were too loud (the sheet read as lots of text), and History kept its pre-Dawn-sky layout of big cards with two stacked 44px buttons per row, because only the main screen had been mocked up. Fixed as above. Rule taken from it: a control's *tap area* must be 44px; what it *looks like* can be much smaller (`quiet` / `danger` Button variants are text-only with a 44px minimum height).
 
 Not built, not needed now: a loading skeleton (pages are server-rendered in ~0.5s, so a skeleton would only flash), and a slide-*out* animation for the sheet (it unmounts on close; the sunrise covers the save case).
 

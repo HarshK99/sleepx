@@ -99,8 +99,8 @@ export function LoopingWheelColumn({
         height: itemHeight * visibleRows,
         paddingTop: edgePadding,
         paddingBottom: edgePadding,
-        maskImage: 'linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28))',
-        WebkitMaskImage: 'linear-gradient(rgba(0,0,0,.28), #000 36%, #000 64%, rgba(0,0,0,.28))',
+        maskImage: 'linear-gradient(rgba(0,0,0,.35), #000 33%, #000 67%, rgba(0,0,0,.35))',
+        WebkitMaskImage: 'linear-gradient(rgba(0,0,0,.35), #000 33%, #000 67%, rgba(0,0,0,.35))',
       }}
     >
       {repeated.map((option, i) => (
@@ -112,7 +112,7 @@ export function LoopingWheelColumn({
         >
           <span
             className={
-              option === value ? 'font-semibold text-ink tabular-nums' : 'text-ink-3 tabular-nums'
+              option === value ? 'font-semibold text-ink tabular-nums' : 'text-sm text-wheel-neighbour tabular-nums'
             }
           >
             {option}
